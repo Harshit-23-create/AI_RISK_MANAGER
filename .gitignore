@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.log
+test_auth.db
+*.sqlite3
+.DS_Store

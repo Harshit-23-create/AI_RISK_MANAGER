@@ -1,0 +1,10 @@
+{
+  "roc_auc": 1.0,
+  "n_train": 8000,
+  "n_test": 2000,
+  "best_iteration": 0,
+  "feature_importance": {
+    "failed_attempts": 4092.50830078125,
+    "account_age_days": 6271.96923828125
+  }
+}
