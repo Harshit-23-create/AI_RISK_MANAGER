@@ -9,13 +9,13 @@ import { AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 
 const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().trim().toLowerCase(),
   password: z.string().min(6),
   full_name: z.string().optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().trim().toLowerCase(),
   password: z.string().min(1),
 });
 
