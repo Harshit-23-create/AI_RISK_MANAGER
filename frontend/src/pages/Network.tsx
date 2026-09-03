@@ -43,7 +43,7 @@ export default function Network() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total Events', value: stats?.total_events?.toLocaleString() ?? '—', color: '#3b82f6' },
           { label: 'Req/Sec (avg)', value: stats?.average_request_rate?.toFixed(2) ?? '—', color: '#06b6d4' },

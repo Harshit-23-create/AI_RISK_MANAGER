@@ -33,6 +33,7 @@ export default function Login() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      padding: '16px',
     }}>
       <div className="glass-card" style={{
         width: '100%', maxWidth: 420,
@@ -146,14 +147,17 @@ export default function Login() {
           </div>
           <button
             type="button"
-            onClick={(e) => {
-              setEmail('admin@riskmanager.ai');
-              setPassword('Admin@123');
-              // Briefly wait for state to update, then submit
-              setTimeout(() => {
-                const form = e.currentTarget.closest('.glass-card')?.querySelector('form');
-                if (form) form.requestSubmit();
-              }, 50);
+            onClick={async () => {
+              setError('');
+              setLoading(true);
+              try {
+                await login('admin@riskmanager.ai', 'Admin@123');
+                navigate('/');
+              } catch {
+                setError('Demo login failed. Check console or API.');
+              } finally {
+                setLoading(false);
+              }
             }}
             disabled={loading}
             style={{

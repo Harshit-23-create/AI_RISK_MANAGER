@@ -44,29 +44,33 @@ export default function Header() {
   };
 
   return (
-    <header style={{
-      height: 60,
+    <header className="h-auto min-h-[60px] flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shrink-0 gap-3 md:gap-0" style={{
       background: 'var(--color-bg-secondary)',
       borderBottom: '1px solid var(--color-border)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      flexShrink: 0,
     }}>
       {/* Live indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div className="live-dot" style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: simRunning ? '#10b981' : '#475569',
-        }} />
-        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-          {simRunning ? 'Simulation running' : 'Simulation stopped'}
-        </span>
+      <div className="flex items-center justify-between w-full md:w-auto">
+        <div className="flex items-center gap-2">
+          <div className="live-dot" style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: simRunning ? '#10b981' : '#475569',
+          }} />
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            {simRunning ? 'Simulation running' : 'Simulation stopped'}
+          </span>
+        </div>
+        
+        {/* Mobile logout button (hidden on desktop) */}
+        <button
+          onClick={logout}
+          className="md:hidden flex items-center p-1.5 rounded-lg border border-[var(--color-border)] text-slate-400 hover:text-white"
+        >
+          <LogOut size={14} />
+        </button>
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
         <button
           id="demo-mode-btn"
           onClick={startDemo}
@@ -80,7 +84,7 @@ export default function Header() {
           }}
         >
           <Zap size={14} />
-          Demo Mode
+          <span className="hidden sm:inline">Demo Mode</span>
         </button>
 
         <button
@@ -98,26 +102,17 @@ export default function Header() {
           }}
         >
           {simRunning ? <Square size={14} /> : <Play size={14} />}
-          {simRunning ? 'Stop' : 'Start'} Simulation
+          <span className="hidden sm:inline">{simRunning ? 'Stop' : 'Start'} Simulation</span>
         </button>
 
-        <div style={{
-          padding: '4px 12px', borderRadius: 20,
-          background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
-          fontSize: 12, color: 'var(--color-text-secondary)',
-        }}>
+        <div className="hidden md:block px-3 py-1 rounded-full text-xs text-slate-400 bg-blue-500/10 border border-blue-500/20">
           {user?.email}
         </div>
 
         <button
           id="logout-btn"
           onClick={logout}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '6px 10px', borderRadius: 8, border: '1px solid var(--color-border)',
-            background: 'transparent', color: 'var(--color-text-muted)',
-            cursor: 'pointer', transition: 'all 0.2s',
-          }}
+          className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-slate-400 hover:text-white transition-colors"
         >
           <LogOut size={14} />
         </button>

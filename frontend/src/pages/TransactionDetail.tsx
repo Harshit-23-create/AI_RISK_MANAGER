@@ -75,7 +75,7 @@ export default function TransactionDetail() {
         <ArrowLeft size={16} /> Back to Transactions
       </button>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Transaction Info */}

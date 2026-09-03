@@ -4,16 +4,11 @@ import Header from './Header';
 
 export default function Layout() {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
+    <div className="flex flex-col md:flex-row min-h-screen" style={{ background: 'var(--color-bg-primary)' }}>
       <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <Header />
-        <main style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '24px',
-          background: 'var(--color-bg-primary)',
-        }}>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6" style={{ background: 'var(--color-bg-primary)' }}>
           <Outlet />
         </main>
       </div>

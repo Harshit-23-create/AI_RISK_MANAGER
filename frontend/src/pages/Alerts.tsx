@@ -29,7 +29,7 @@ export default function Alerts() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)' }}>Security Alerts</h1>
           <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 4 }}>

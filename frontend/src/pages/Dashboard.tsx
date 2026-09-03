@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)' }}>
             Risk Operations Center
@@ -83,7 +83,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard
           title="Total Transactions"
           value={stats?.total_transactions?.toLocaleString() ?? '—'}
@@ -113,9 +113,9 @@ export default function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {/* Risk Timeline */}
-        <div className="glass-card" style={{ padding: 20 }}>
+        <div className="glass-card lg:col-span-2" style={{ padding: 20 }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: 'var(--color-text-primary)' }}>
             Risk Score Timeline
           </h2>
