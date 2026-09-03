@@ -57,7 +57,6 @@ const transactionSchema = new Schema<ITransaction>({
   status: { type: String, default: 'pending' },
 }, { timestamps: true });
 
-transactionSchema.index({ transactionId: 1 });
 transactionSchema.index({ userId: 1 });
 transactionSchema.index({ status: 1 });
 transactionSchema.index({ timestamp: -1 });
