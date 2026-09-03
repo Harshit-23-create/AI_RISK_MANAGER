@@ -47,9 +47,9 @@ class WsManager {
   broadcast(message: object): void {
     if (!this.wss) return;
     const payload = JSON.stringify(message);
-    this.wss.clients.forEach((ws) => {
+    this.wss.clients.forEach((ws: WebSocket) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload, (err) => {
+        ws.send(payload, (err?: Error) => {
           if (err) console.warn('[WS] Send error:', err.message);
         });
       }
