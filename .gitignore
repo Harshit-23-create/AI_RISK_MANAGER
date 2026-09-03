@@ -11,3 +11,5 @@ __pycache__/
 test_auth.db
 *.sqlite3
 .DS_Store
+
+!frontend/.env.production
