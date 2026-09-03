@@ -23,7 +23,9 @@ const app = express();
 // ── Security, Rate Limiting & Logging ─────────────────────────────────────────
 const allowedOrigins = [
   config.frontendUrl,
-  ...(config.nodeEnv === 'development' ? ['http://localhost:5173', 'http://localhost:3000'] : []),
+  'https://ai-risk-manager-chi.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
 ];
 
 app.use(helmet({
@@ -44,7 +46,15 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // and origins that match our allowed array.
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
