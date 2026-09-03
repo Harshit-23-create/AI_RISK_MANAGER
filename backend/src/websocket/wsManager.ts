@@ -5,12 +5,11 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import http from 'http';
 
-import { redis } from '../config/redis';
+import { redisSubscriber } from '../config/redis';
 
 class WsManager {
   private wss: WebSocketServer | null = null;
   private pingInterval: NodeJS.Timeout | null = null;
-  private subscriber = redis.duplicate();
 
   attach(server: http.Server): void {
     this.wss = new WebSocketServer({ server, path: '/ws/risk-feed' });
@@ -30,12 +29,8 @@ class WsManager {
       this.broadcast({ type: 'ping' });
     }, 30000);
 
-    // Subscribe to Redis pub/sub
-    this.subscriber.subscribe('risk-events', (err) => {
-      if (err) console.warn('[WS] Failed to subscribe to Redis risk-events:', err.message);
-    });
-    
-    this.subscriber.on('message', (channel, message) => {
+    // Listen for Redis pub/sub messages (subscription happens in connectRedis)
+    redisSubscriber.on('message', (channel, message) => {
       if (channel === 'risk-events') {
         try {
           const parsed = JSON.parse(message);
