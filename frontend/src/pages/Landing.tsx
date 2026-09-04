@@ -1,224 +1,369 @@
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Activity, Server, Shield, BrainCircuit, ArrowRight, Network } from 'lucide-react';
+import {
+  ShieldCheck, Activity, Server, Shield, BrainCircuit, ArrowRight, Network,
+  CheckCircle2, Zap, LockKeyhole
+} from 'lucide-react';
+
+const capabilities = [
+  {
+    icon: BrainCircuit,
+    title: 'AI-Powered Analysis',
+    text: 'Isolation Forest and XGBoost models identify behavioral anomalies and high-risk payment patterns in real time.',
+    tone: 'blue',
+  },
+  {
+    icon: Network,
+    title: 'Network Intelligence',
+    text: 'DPI telemetry correlates network metadata with application-layer payments to expose suspicious activity.',
+    tone: 'emerald',
+  },
+  {
+    icon: Activity,
+    title: 'SOC Alert Management',
+    text: 'Give analysts one place to triage, acknowledge, escalate, and resolve security incidents.',
+    tone: 'amber',
+  },
+];
+
+const pipeline = [
+  ['Payment Initiated', 'slate'],
+  ['Behavioral Analysis', 'blue'],
+  ['Network / DPI Analysis', 'emerald'],
+  ['ML Anomaly Detection', 'purple'],
+  ['Risk Score Generated', 'cyan'],
+];
+
+const weights = [
+  ['Transaction Risk', '25%', 'bg-blue-400'],
+  ['Behavioral Risk', '25%', 'bg-indigo-400'],
+  ['Network / DPI', '20%', 'bg-emerald-400'],
+  ['ML Anomaly (IF)', '15%', 'bg-purple-400'],
+  ['ML Supervised (XGB)', '15%', 'bg-pink-400'],
+];
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-cyan-500/30 font-sans overflow-x-hidden">
-      {/* ── Navbar ── */}
-      <nav className="fixed top-0 w-full z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <span className="text-sm font-black text-white tracking-tight uppercase">AI Risk Manager</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+    <div className="min-h-[100dvh] min-w-0 overflow-x-hidden bg-slate-950 text-slate-200">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex min-w-0 items-center gap-2.5">
+            <span className="shrink-0 rounded-lg border border-cyan-500/25 bg-cyan-500/10 p-1.5 text-cyan-400">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <span className="truncate text-xs font-black uppercase tracking-tight text-white sm:text-sm">
+              AI Risk Manager
+            </span>
+          </Link>
+
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <Link
+              to="/login"
+              className="rounded-lg px-2 py-2 text-xs font-semibold text-slate-300 transition hover:text-white sm:px-3 sm:text-sm"
+            >
               Sign In
             </Link>
-            <Link to="/login" className="px-4 py-2 text-sm font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20">
+            <Link
+              to="/login"
+              className="inline-flex min-h-9 items-center justify-center rounded-lg bg-cyan-500 px-3 text-xs font-bold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:bg-cyan-400 sm:px-4 sm:text-sm"
+            >
               Launch Console
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-[500px] bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-mono font-bold mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-            SYSTEM ONLINE • SOC ACTIVE
+      <main>
+        {/* Hero */}
+        <section className="relative overflow-hidden border-b border-slate-800/60">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(circle_at_50%_0%,rgba(6,182,212,.16),transparent_60%)]" />
+          <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-16 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pb-28 lg:pt-24">
+            <div className="mx-auto max-w-4xl">
+              <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[9px] font-bold font-mono uppercase tracking-wider text-cyan-300 sm:text-xs">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60" />
+                  <span className="relative h-2 w-2 rounded-full bg-cyan-400" />
+                </span>
+                System Online · SOC Active
+              </div>
+
+              <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+                Real-Time Payment
+                <span className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                  Risk Intelligence
+                </span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base sm:leading-7 lg:text-lg">
+                Detect payment fraud, behavioral anomalies, and network threats
+                before they become financial losses. A focused security
+                operations center for modern fintech teams.
+              </p>
+
+              <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:justify-center">
+                <Link
+                  to="/login"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-cyan-500/15 transition hover:bg-cyan-400 sm:w-auto"
+                >
+                  Launch Risk Console
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800 sm:w-auto"
+                >
+                  Explore Demo Mode
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 sm:text-[11px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  Real-time scoring
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  Explainable decisions
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  Live SOC telemetry
+                </span>
+              </div>
+            </div>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-6 leading-tight">
-            Real-Time Payment <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Risk Intelligence</span>
-          </h1>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-            Detect payment fraud, behavioral anomalies, and network threats before they become financial losses. A comprehensive SOC built for modern fintechs.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/login" className="w-full sm:w-auto px-8 py-3.5 text-sm font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20">
-              Launch Risk Console <ArrowRight className="w-4 h-4" />
+        </section>
+
+        {/* Capabilities */}
+        <section className="border-b border-slate-800/60 bg-slate-900/20">
+          <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+            <div className="mb-8 max-w-2xl sm:mb-10">
+              <p className="text-[10px] font-bold font-mono uppercase tracking-[.2em] text-cyan-400">
+                Built for analysts
+              </p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                One security layer for the entire payment flow
+              </h2>
+            </div>
+
+            <div className="grid min-w-0 gap-4 md:grid-cols-3">
+              {capabilities.map(({ icon: Icon, title, text, tone }) => (
+                <article
+                  key={title}
+                  className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-lg transition hover:-translate-y-0.5 hover:border-slate-700 sm:p-6"
+                >
+                  <div className={`mb-5 inline-flex rounded-xl border p-3 ${
+                    tone === 'blue'
+                      ? 'border-blue-500/20 bg-blue-500/10 text-blue-400'
+                      : tone === 'emerald'
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                        : 'border-amber-500/20 bg-amber-500/10 text-amber-400'
+                  }`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-white sm:text-lg">{title}</h3>
+                  <p className="mt-2 text-xs leading-6 text-slate-400 sm:text-sm">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pipeline */}
+        <section className="border-b border-slate-800/60">
+          <div className="mx-auto w-full max-w-5xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
+            <p className="text-[10px] font-bold font-mono uppercase tracking-[.2em] text-cyan-400">
+              Detection workflow
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+              The Intelligence Pipeline
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-slate-400 sm:text-sm">
+              Multiple signals are evaluated before a transaction receives a
+              routing decision.
+            </p>
+
+            <div className="mx-auto mt-10 max-w-2xl">
+              <div className="flex flex-col items-center">
+                <div className="w-full max-w-xs rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-xs font-bold font-mono text-slate-200 sm:text-sm">
+                  Payment Initiated
+                </div>
+                <div className="h-8 w-px bg-cyan-500/50" />
+
+                <div className="grid w-full gap-3 sm:grid-cols-2">
+                  {pipeline.slice(1, 3).map(([label, tone]) => (
+                    <div
+                      key={label}
+                      className={`rounded-xl border px-3 py-3 text-xs font-bold font-mono ${
+                        tone === 'blue'
+                          ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      }`}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="h-8 w-px bg-cyan-500/50" />
+                <div className="w-full max-w-xs rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-3 text-xs font-bold font-mono text-purple-300 sm:text-sm">
+                  ML Anomaly Detection
+                </div>
+
+                <div className="h-8 w-px bg-cyan-500/50" />
+                <div className="w-full max-w-xs rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs font-bold font-mono text-cyan-300 sm:text-sm">
+                  Risk Score Generated
+                </div>
+
+                <div className="h-8 w-px bg-cyan-500/50" />
+
+                <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                  {[
+                    ['ALLOW', 'emerald'],
+                    ['MONITOR', 'blue'],
+                    ['STEP-UP', 'amber'],
+                    ['BLOCK', 'rose'],
+                  ].map(([label, tone]) => (
+                    <span
+                      key={label}
+                      className={`rounded-lg border px-2 py-2 text-[9px] font-bold font-mono sm:text-xs ${
+                        tone === 'emerald'
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                          : tone === 'blue'
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                            : tone === 'amber'
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                              : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Explainable engine */}
+        <section className="bg-slate-900/20">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+            <div className="grid min-w-0 items-center gap-8 lg:grid-cols-2 lg:gap-14">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold font-mono uppercase tracking-[.2em] text-purple-400">
+                  Explainability
+                </p>
+                <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+                  Explainable AI Risk Engine
+                </h2>
+                <p className="mt-4 text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
+                  Every transaction is evaluated across multiple risk vectors,
+                  giving SOC analysts a clear explanation behind block,
+                  step-up, monitor, or allow decisions.
+                </p>
+
+                <div className="mt-7 space-y-4">
+                  {weights.map(([label, weight, bar]) => (
+                    <div key={label}>
+                      <div className="mb-1.5 flex justify-between gap-4 text-xs font-mono text-slate-300">
+                        <span className="truncate">{label}</span>
+                        <span className="shrink-0">{weight}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className={`h-full rounded-full ${bar}`}
+                          style={{ width: weight }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl sm:p-7">
+                <div className="pointer-events-none absolute -right-10 -top-10 opacity-[.06]">
+                  <Shield className="h-56 w-56" />
+                </div>
+
+                <div className="relative">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <Server className="h-4 w-4 text-cyan-400" />
+                    Real-Time Architecture
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 text-slate-400">
+                    Redis event streaming and WebSocket telemetry keep the
+                    operations center synchronized with incoming risk events.
+                  </p>
+
+                  <div className="mt-6 grid gap-2">
+                    {[
+                      'Redis Event Streaming',
+                      'Python FastAPI ML Microservice',
+                      'Express.js REST Core',
+                      'React Router SPA',
+                    ].map((item) => (
+                      <div
+                        key={item}
+                        className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-[10px] font-mono text-slate-400 sm:text-xs"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+                        <span className="break-words">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                      <LockKeyhole className="h-4 w-4 text-emerald-400" />
+                      <p className="mt-2 text-[10px] font-bold uppercase text-slate-500">Secure</p>
+                      <p className="mt-0.5 text-xs font-semibold text-white">SOC-grade controls</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                      <Zap className="h-4 w-4 text-amber-400" />
+                      <p className="mt-2 text-[10px] font-bold uppercase text-slate-500">Fast</p>
+                      <p className="mt-0.5 text-xs font-semibold text-white">Live risk telemetry</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="border-t border-slate-800/60">
+          <div className="mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">
+              Enter the Risk Operations Center
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
+              Investigate synthetic transactions instantly with the built-in
+              simulation engine.
+            </p>
+            <Link
+              to="/login"
+              className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-cyan-500/15 transition hover:bg-cyan-400"
+            >
+              Launch Risk Console
+              <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link to="/login" className="w-full sm:w-auto px-8 py-3.5 text-sm font-bold rounded-xl bg-slate-900 text-white hover:bg-slate-800 border border-slate-700 transition-colors flex items-center justify-center gap-2">
-              Explore Demo Mode
-            </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* ── Value / Core Capabilities ── */}
-      <section className="py-20 border-t border-slate-800/50 bg-slate-900/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-4 border border-blue-500/20">
-                <BrainCircuit className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">AI-Powered Analysis</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Utilize Isolation Forests and XGBoost models to detect complex behavioral anomalies in real-time.
-              </p>
-            </div>
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 border border-emerald-500/20">
-                <Network className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">Network Intelligence</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Deep Packet Inspection (DPI) telemetry correlates L7 network metadata with application-layer payments.
-              </p>
-            </div>
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 border border-amber-500/20">
-                <Activity className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">SOC Alert Management</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                A dedicated Security Operations Center interface for analysts to triage, escalate, and resolve incidents.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it Works Flow ── */}
-      <section className="py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-black text-white mb-16">The Intelligence Pipeline</h2>
-          
-          <div className="flex flex-col items-center gap-4 text-sm font-bold font-mono">
-            <div className="w-48 py-3 rounded-xl border border-slate-700 bg-slate-800/50 text-slate-200">
-              Payment Initiated
-            </div>
-            <div className="h-8 w-px bg-cyan-500/50"></div>
-            
-            <div className="w-full max-w-md grid grid-cols-2 gap-4">
-              <div className="py-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400">Behavioral Analysis</div>
-              <div className="py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Network / DPI Analysis</div>
-            </div>
-            <div className="h-8 w-px bg-cyan-500/50"></div>
-            
-            <div className="w-48 py-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400">
-              ML Anomaly Detection
-            </div>
-            <div className="h-8 w-px bg-cyan-500/50"></div>
-            
-            <div className="w-48 py-3 rounded-xl border border-cyan-500/50 bg-cyan-500/20 text-cyan-300">
-              Risk Score Generated
-            </div>
-            <div className="h-8 w-px bg-cyan-500/50"></div>
-
-            <div className="flex items-center justify-center gap-3 w-full max-w-md">
-              <span className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs">ALLOW</span>
-              <span className="px-3 py-1.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs">MONITOR</span>
-              <span className="px-3 py-1.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">STEP-UP</span>
-              <span className="px-3 py-1.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs">BLOCK</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Risk Engine Breakdown ── */}
-      <section className="py-24 border-t border-slate-800/50 bg-slate-900/20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-black text-white mb-6">Explainable AI Risk Engine</h2>
-              <p className="text-slate-400 leading-relaxed mb-8">
-                Our decision engine uses a transparent, weighted model. Every transaction is scored across multiple vectors, providing SOC analysts with clear Shapley values and LLM-generated explanations for every block or step-up challenge.
-              </p>
-              
-              <div className="space-y-4 font-mono text-sm">
-                <div>
-                  <div className="flex justify-between text-slate-300 mb-1">
-                    <span>Transaction Risk</span>
-                    <span>25%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-800"><div className="h-full rounded-full bg-blue-400 w-[25%]"></div></div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-slate-300 mb-1">
-                    <span>Behavioral Risk</span>
-                    <span>25%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-800"><div className="h-full rounded-full bg-indigo-400 w-[25%]"></div></div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-slate-300 mb-1">
-                    <span>Network / DPI</span>
-                    <span>20%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-800"><div className="h-full rounded-full bg-emerald-400 w-[20%]"></div></div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-slate-300 mb-1">
-                    <span>ML Anomaly (IF)</span>
-                    <span>15%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-800"><div className="h-full rounded-full bg-purple-400 w-[15%]"></div></div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-slate-300 mb-1">
-                    <span>ML Supervised (XGB)</span>
-                    <span>15%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-800"><div className="h-full rounded-full bg-pink-400 w-[15%]"></div></div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-8 rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Shield className="w-48 h-48" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-6 flex items-center gap-2">
-                <Server className="w-4 h-4 text-cyan-400" /> Real-Time Architecture
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Powered by a high-performance Redis Pub/Sub backplane and WebSocket feeds, ensuring analysts see risk events the millisecond they occur.
-              </p>
-              <div className="flex flex-col gap-2 font-mono text-xs text-slate-500">
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950">✓ Redis Event Streaming</div>
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950">✓ Python FastAPI ML Microservice</div>
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950">✓ Express.js REST Core</div>
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950">✓ React Router SPA</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA ── */}
-      <section className="py-24 text-center">
-        <h2 className="text-3xl font-black text-white mb-6">Enter the Risk Operations Center</h2>
-        <p className="text-slate-400 mb-10 max-w-xl mx-auto">
-          Start investigating synthetic transactions instantly using our built-in simulation engine. No configuration required.
-        </p>
-        <Link to="/login" className="inline-flex px-8 py-4 text-sm font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:shadow-[0_0_40px_rgba(6,182,212,0.5)]">
-          Launch Risk Console
-        </Link>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-slate-800/60 bg-slate-950 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-500">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-cyan-500" />
+      <footer className="border-t border-slate-800 bg-slate-950">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-7 text-center text-[10px] text-slate-500 sm:px-6 sm:text-xs lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:text-left">
+          <div className="flex items-center justify-center gap-2 lg:justify-start">
+            <ShieldCheck className="h-4 w-4 text-cyan-500" />
             <span className="font-bold text-slate-300">AI Risk Manager</span>
             <span>— Payment Security SOC</span>
           </div>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-cyan-400 transition-colors">Product</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Security</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Documentation</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">GitHub</a>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-end">
+            <span>Product</span>
+            <span>Security</span>
+            <span>Documentation</span>
+            <span>GitHub</span>
           </div>
         </div>
       </footer>

@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 8000);
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -79,7 +79,7 @@ export default function Dashboard() {
         setTimeout(() => setNewRowIds(new Set()), 3000);
         setFeed(prev => [...incoming, ...prev].slice(0, MAX_FEED_ROWS));
       }
-    }, 1500);
+    }, 10000);
     return () => clearInterval(flush);
   }, [isFeedPaused]);
 
@@ -124,7 +124,7 @@ export default function Dashboard() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       {/* ── Page Header ────────────────────────────────────────────── */}
@@ -134,7 +134,7 @@ export default function Dashboard() {
           <p className="text-xs text-slate-400 mt-0.5">Real-time payment fraud prevention & network deep packet inspection</p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${
             wsStatus === 'connected'
               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
@@ -156,7 +156,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── 6 KPIs ───────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           title="Total Processed"
           value={total.toLocaleString()}
@@ -208,15 +208,15 @@ export default function Dashboard() {
       </div>
 
       {/* ── Charts Row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Risk Timeline */}
-        <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-lg">
-          <div className="flex items-center justify-between mb-4">
+        <div className="min-w-0 lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-lg">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="text-sm font-bold text-white">Risk Score & Transaction Volume</h2>
               <p className="text-[11px] text-slate-400">Score variations and anomaly spikes over time</p>
             </div>
-            <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
+            <div className="flex shrink-0 items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
               {(['1H', '6H', '24H', '7D'] as const).map((r) => (
                 <button
                   key={r}
@@ -230,7 +230,7 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={240} minWidth={0}>
             <AreaChart data={stats?.risk_timeline ?? []}>
               <defs>
                 <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
@@ -251,13 +251,13 @@ export default function Dashboard() {
         </div>
 
         {/* Decision Donut */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-lg flex flex-col">
+        <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-lg backdrop-blur-md sm:p-5 flex flex-col">
           <div className="mb-2">
             <h2 className="text-sm font-bold text-white">Decision Distribution</h2>
             <p className="text-[11px] text-slate-400">ALLOW / MONITOR / STEP-UP / BLOCK</p>
           </div>
           <div className="flex-1">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={200} minWidth={0}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -284,11 +284,11 @@ export default function Dashboard() {
       </div>
 
       {/* ── Live Risk Feed & Alerts ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Live Risk Feed Table */}
-        <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-lg flex flex-col">
+        <div className="min-w-0 lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-lg flex flex-col">
           {/* Feed Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-800">
+          <div className="flex min-w-0 flex-col gap-3 border-b border-slate-800 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
                 <Radio className="w-4 h-4 animate-pulse" />
@@ -307,7 +307,7 @@ export default function Dashboard() {
                   placeholder="Search Tx/IP…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500 w-36"
+                  className="h-9 w-full rounded-lg border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-slate-200 outline-none focus:border-cyan-500 sm:w-36"
                 />
               </div>
               <select
@@ -335,8 +335,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left text-xs min-w-[500px]">
+          <div className="min-w-0 flex-1 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-500 uppercase font-mono text-[10px] tracking-wider">
                   <th className="px-4 py-2.5">Tx ID</th>
@@ -404,7 +404,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Panel: Recent Alerts & Risk Factor */}
-        <div className="space-y-4 flex flex-col h-full">
+        <div className="min-w-0 space-y-4 flex flex-col h-full">
           {/* Recent Alerts */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-lg flex-1">
             <div className="flex items-center justify-between mb-4">

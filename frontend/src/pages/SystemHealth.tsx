@@ -63,7 +63,7 @@ export default function SystemHealth() {
   ];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
@@ -92,7 +92,7 @@ export default function SystemHealth() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {services.map((s) => (
-          <div key={s.id} className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg flex items-center justify-between">
+          <div key={s.id} className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-xl border ${s.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
                 <s.icon className="w-6 h-6" />

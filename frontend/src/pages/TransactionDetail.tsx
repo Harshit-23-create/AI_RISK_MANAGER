@@ -72,7 +72,7 @@ export default function TransactionDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
       <button
         onClick={() => navigate('/transactions')}
         className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors"
@@ -81,11 +81,11 @@ export default function TransactionDetail() {
       </button>
 
       {/* Header Overview Card */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 backdrop-blur-md shadow-xl flex flex-col md:flex-row justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-slate-400 font-mono">TRANSACTION ID:</span>
-            <span className="font-mono text-cyan-400 font-extrabold text-sm">{txn.transaction_id}</span>
+      <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6 backdrop-blur-md shadow-xl flex flex-col md:flex-row justify-between gap-6">
+        <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex items-center gap-2.5">
+            <span className="shrink-0 text-xs text-slate-400 font-mono">TRANSACTION ID:</span>
+            <span className="min-w-0 break-all font-mono text-cyan-400 font-extrabold text-sm">{txn.transaction_id}</span>
           </div>
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-black text-white">{formatCurrency(txn.amount, txn.currency)}</span>
@@ -97,22 +97,22 @@ export default function TransactionDetail() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
-          <div>
+        <div className="grid min-w-0 grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">User Account</span>
-            <span className="font-bold text-white font-mono">{txn.user_id}</span>
+            <span className="block truncate font-bold text-white font-mono">{txn.user_id}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Payment Method</span>
-            <span className="font-bold text-slate-200">{txn.payment_method || 'UPI'}</span>
+            <span className="block truncate font-bold text-slate-200">{txn.payment_method || 'UPI'}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">IP Address</span>
-            <span className="font-bold text-cyan-300 font-mono">{txn.ip_address || '—'}</span>
+            <span className="block truncate font-bold text-cyan-300 font-mono">{txn.ip_address || '—'}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Country</span>
-            <span className="font-bold text-slate-200">{txn.country || 'India'}</span>
+            <span className="block truncate font-bold text-slate-200">{txn.country || 'India'}</span>
           </div>
         </div>
       </div>

@@ -88,8 +88,12 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
       Transaction.countDocuments(filter),
     ]);
 
+    const txIds = items.map(i => String(i._id));
+    const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
+    const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
+
     // Map to snake_case for frontend compatibility
-    const mappedItems = items.map(mapTxnToResponse);
+    const mappedItems = items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id))));
     res.json({ total, page, page_size: pageSize, items: mappedItems });
   } catch (err) { next(err); }
 }
@@ -150,12 +154,16 @@ export async function getUserHistory(req: AuthRequest, res: Response, next: Next
       Transaction.countDocuments({ userId }),
     ]);
 
-    res.json({ total, page, page_size: pageSize, items: items.map(mapTxnToResponse) });
+    const txIds = items.map(i => String(i._id));
+    const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
+    const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
+
+    res.json({ total, page, page_size: pageSize, items: items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id)))) });
   } catch (err) { next(err); }
 }
 
 // Convert camelCase Mongoose doc to snake_case API response matching existing frontend
-function mapTxnToResponse(txn: any) {
+function mapTxnToResponse(txn: any, decision?: string) {
   return {
     id: String(txn._id),
     transaction_id: txn.transactionId,
@@ -177,6 +185,7 @@ function mapTxnToResponse(txn: any) {
     is_new_ip: txn.isNewIp,
     scenario_label: txn.scenarioLabel ?? null,
     status: txn.status,
+    decision: decision || null,
     timestamp: txn.timestamp,
     created_at: txn.createdAt,
   };

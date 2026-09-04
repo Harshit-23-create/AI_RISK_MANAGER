@@ -45,7 +45,7 @@ export default function Analytics() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
@@ -89,7 +89,7 @@ export default function Analytics() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Risk Score Area Chart (from DB) */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+            <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function Analytics() {
                   <p className="text-[11px] text-slate-400 mt-0.5">Aggregated anomaly detection scores</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={260} minWidth={0}>
                 <AreaChart data={stats?.risk_timeline ?? []}>
                   <defs>
                     <linearGradient id="riskAnalyticsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -120,7 +120,7 @@ export default function Analytics() {
             </div>
 
             {/* Transaction Volume Bar Chart (Mocked) */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+            <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -129,7 +129,7 @@ export default function Analytics() {
                   <p className="text-[11px] text-slate-400 mt-0.5">Total processed vs blocked attempts</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={260} minWidth={0}>
                 <BarChart data={mockDailyVolume}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
@@ -147,7 +147,7 @@ export default function Analytics() {
           </div>
 
           {/* Bottom Chart */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+          <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -156,7 +156,7 @@ export default function Analytics() {
                 <p className="text-[11px] text-slate-400 mt-0.5">Historical breakdown of SOC routing decisions</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={260} minWidth={0}>
               <LineChart data={mockDecisionTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />

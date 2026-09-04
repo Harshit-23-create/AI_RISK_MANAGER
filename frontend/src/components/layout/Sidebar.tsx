@@ -1,5 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, Bell, Network, Settings, X, ShieldCheck, Activity, BarChart2, Zap } from 'lucide-react';
+import {
+  LayoutDashboard, ArrowLeftRight, Bell, Network, Settings, X,
+  ShieldCheck, Activity, BarChart2, Zap
+} from 'lucide-react';
 
 const mainNav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -17,44 +20,48 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: SidebarProps) {
-  const sidebarClasses = `
-    fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
-    lg:translate-x-0 lg:static lg:shrink-0
-    ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-  `;
-
   return (
     <>
-      {/* Mobile Backdrop */}
       {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-950/80 z-40 lg:hidden backdrop-blur-sm"
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 cursor-default bg-slate-950/75 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
-      
-      <aside className={sidebarClasses}>
-        {/* Brand Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <ShieldCheck className="w-5 h-5" />
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,86vw)] shrink-0 flex-col border-r border-slate-800 bg-slate-900 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-64 lg:translate-x-0 lg:shadow-none ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex min-h-16 items-center justify-between border-b border-slate-800 px-4 sm:px-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="shrink-0 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-2 text-cyan-400">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <div>
-              <div className="text-sm font-black text-white tracking-tight leading-none">AI Risk Manager</div>
-              <div className="text-[10px] text-slate-500 font-mono font-bold mt-0.5">Enterprise SOC</div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-black leading-none tracking-tight text-white">
+                AI Risk Manager
+              </div>
+              <div className="mt-1 text-[9px] font-bold font-mono uppercase tracking-wider text-slate-500">
+                Enterprise SOC
+              </div>
             </div>
           </div>
-          <button 
-            className="lg:hidden text-slate-400 hover:text-white" 
+
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
           <nav className="space-y-1">
             {mainNav.map(({ to, icon: Icon, label }) => (
               <NavLink
@@ -62,34 +69,34 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: SidebarPr
                 to={to}
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                  `flex min-h-10 items-center gap-3 rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors ${
                     isActive
-                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                      ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
+                      : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                   }`
                 }
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{label}</span>
               </NavLink>
             ))}
           </nav>
 
-          <div className="h-px bg-slate-800/50" />
+          <div className="my-5 h-px bg-slate-800/60" />
 
-          <nav className="space-y-1">
+          <nav>
             <NavLink
               to="/settings"
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                `flex min-h-10 items-center gap-3 rounded-xl border px-3 py-2.5 text-xs font-bold ${
                   isActive
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                    ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
+                    : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`
               }
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="h-4 w-4 shrink-0" />
               Settings
             </NavLink>
           </nav>

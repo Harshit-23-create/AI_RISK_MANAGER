@@ -7,16 +7,22 @@ export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
-      {/* Sidebar - Desktop and Mobile Drawer */}
-      <Sidebar mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
-      
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <Header mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
-        
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950 relative z-0">
-          <Outlet />
+    <div className="flex min-h-[100dvh] w-full min-w-0 overflow-hidden bg-slate-950 font-sans antialiased text-slate-100">
+      <Sidebar
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Header
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-950">
+          <div className="mx-auto w-full min-w-0 max-w-[1800px] p-3 sm:p-4 lg:p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

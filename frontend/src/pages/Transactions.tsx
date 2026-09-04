@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Filter, ChevronLeft, ChevronRight, Eye, Clock
+  Search, Filter, Eye, Clock
 } from 'lucide-react';
 import { transactionsApi } from '../services/api';
 import type { TransactionListResponse } from '../types';
 import { formatCurrency, formatTimestamp, truncateId } from '../utils';
 import { EmptyState } from '../components/ui/EmptyState';
+import { RiskBadge } from '../components/ui/RiskBadge';
 
 const DECISIONS = ['ALL', 'ALLOW', 'MONITOR', 'STEP-UP', 'BLOCK'];
 
@@ -24,7 +25,7 @@ export default function Transactions() {
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await transactionsApi.list({
@@ -43,11 +44,13 @@ export default function Transactions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, decision, searchQuery, minAmount, maxAmount, fromDate, toDate]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, decision]);
+    const interval = setInterval(fetchTransactions, 10000);
+    return () => clearInterval(interval);
+  }, [fetchTransactions]);
 
   const handleApplyFilters = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +69,7 @@ export default function Transactions() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
@@ -81,7 +84,7 @@ export default function Transactions() {
       </div>
 
       {/* Filter Controls Panel */}
-      <form onSubmit={handleApplyFilters} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl space-y-4">
+      <form onSubmit={handleApplyFilters} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-cyan-400" />
@@ -180,7 +183,7 @@ export default function Transactions() {
       </form>
 
       {/* Main Table / Mobile Cards */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-xl overflow-hidden">
+      <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-xl overflow-hidden">
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -194,6 +197,7 @@ export default function Transactions() {
                 <th className="p-3.5">Payment Method</th>
                 <th className="p-3.5">Failed Attempts</th>
                 <th className="p-3.5">Status</th>
+                <th className="p-3.5">Decision</th>
                 <th className="p-3.5 text-right">Action</th>
               </tr>
             </thead>
@@ -247,9 +251,16 @@ export default function Transactions() {
                       </span>
                     </td>
                     <td className="p-3.5">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        {txn.status}
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                        txn.failed_attempts > 0 
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        {txn.failed_attempts > 0 ? 'FAILED' : 'COMPLETED'}
                       </span>
+                    </td>
+                    <td className="p-3.5">
+                      <RiskBadge decision={txn.decision || 'ALLOW'} size="sm" />
                     </td>
                     <td className="p-3.5 text-right">
                       <span className="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 transition-colors inline-flex items-center">
@@ -284,32 +295,6 @@ export default function Transactions() {
             </div>
           ))}
         </div>
-
-        {/* Pagination Footer */}
-        {data && data.total > 50 && (
-          <div className="flex items-center justify-between p-4 border-t border-slate-800 text-xs">
-            <span className="text-slate-400">
-              Showing page <strong className="text-white">{page}</strong> of {Math.ceil(data.total / 50)}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                disabled={page >= Math.ceil(data.total / 50)}
-                onClick={() => setPage((p) => p + 1)}
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

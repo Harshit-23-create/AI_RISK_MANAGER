@@ -40,6 +40,7 @@ export interface Transaction {
   is_new_device: boolean;
   is_new_ip: boolean;
   status: string;
+  decision?: Decision;
   scenario_label: string | null;
   timestamp: string;
   created_at: string;

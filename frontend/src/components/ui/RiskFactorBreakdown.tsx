@@ -20,40 +20,42 @@ export const RiskFactorBreakdown: React.FC<BreakdownProps> = ({ breakdown }) => 
   };
 
   const factors = [
-    { label: 'Transaction Risk', weight: '25%', score: data.transaction, color: 'bg-cyan-500' },
-    { label: 'Behavioral Risk', weight: '25%', score: data.behavioral, color: 'bg-blue-500' },
-    { label: 'Network / DPI Risk', weight: '20%', score: data.network, color: 'bg-indigo-500' },
-    { label: 'ML Anomaly (IF)', weight: '15%', score: data.ml_anomaly, color: 'bg-purple-500' },
-    { label: 'ML Supervised (XGB)', weight: '15%', score: data.ml_supervised, color: 'bg-pink-500' },
+    { label: 'Transaction Risk', weight: '25%', score: data.transaction },
+    { label: 'Behavioral Risk', weight: '25%', score: data.behavioral },
+    { label: 'Network / DPI Risk', weight: '20%', score: data.network },
+    { label: 'ML Anomaly (IF)', weight: '15%', score: data.ml_anomaly },
+    { label: 'ML Supervised (XGB)', weight: '15%', score: data.ml_supervised },
   ];
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-lg">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Risk Factor Weighted Analysis</h3>
-        <span className="text-[11px] text-slate-400 font-mono">100% Total Model Weight</span>
+    <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-lg backdrop-blur-md">
+      <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+        <h3 className="min-w-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+          Risk Factor Weighted Analysis
+        </h3>
+        <span className="shrink-0 text-[9px] font-mono text-slate-500 sm:text-[10px]">
+          100% Weight
+        </span>
       </div>
 
-      <div className="space-y-3.5">
-        {factors.map((f, i) => {
-          const score = Math.round(f.score || 0);
-          const getBarColor = (val: number) => {
-            if (val > 70) return 'bg-rose-500 shadow-rose-500/20';
-            if (val > 45) return 'bg-amber-500 shadow-amber-500/20';
-            return 'bg-emerald-500 shadow-emerald-500/20';
-          };
+      <div className="space-y-3">
+        {factors.map((factor) => {
+          const score = Math.round(factor.score || 0);
+          const barColor =
+            score > 70 ? 'bg-rose-500' : score > 45 ? 'bg-amber-500' : 'bg-emerald-500';
 
           return (
-            <div key={i} className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-medium text-slate-300">
-                  {f.label} <span className="text-[10px] text-slate-400 font-mono">({f.weight})</span>
+            <div key={factor.label} className="min-w-0 space-y-1">
+              <div className="flex min-w-0 justify-between gap-3 text-[10px] sm:text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-300">
+                  {factor.label}{' '}
+                  <span className="text-[9px] font-mono text-slate-500">({factor.weight})</span>
                 </span>
-                <span className="font-bold text-slate-200 font-mono">{score}/100</span>
+                <span className="shrink-0 font-bold font-mono text-slate-200">{score}/100</span>
               </div>
-              <div className="relative h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/40">
+              <div className="relative h-2 w-full overflow-hidden rounded-full border border-slate-700/40 bg-slate-800">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${getBarColor(score)}`}
+                  className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                   style={{ width: `${Math.min(100, Math.max(2, score))}%` }}
                 />
               </div>
