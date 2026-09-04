@@ -83,7 +83,8 @@ export interface RiskAssessment {
   created_at: string;
 }
 
-// ── Alert ────────────────────────────────────────────
+export type AlertStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'ESCALATED';
+
 export interface Alert {
   id: string;
   transaction_id: string | null;
@@ -91,8 +92,12 @@ export interface Alert {
   alert_type: string;
   title: string;
   message: string;
+  status?: AlertStatus;
   is_resolved: boolean;
+  acknowledged_at?: string | null;
   resolved_at: string | null;
+  escalated_at?: string | null;
+  assigned_to?: string;
   created_at: string;
 }
 

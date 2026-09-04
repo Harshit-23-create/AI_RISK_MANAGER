@@ -64,6 +64,65 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   } catch (err) { next(err); }
 }
 
+import axios from 'axios';
+
+const googleSchema = z.object({
+  id_token: z.string().optional(),
+  token: z.string().optional(),
+  email: z.string().email().optional(),
+  name: z.string().optional(),
+});
+
+export async function googleLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id_token, token, email: rawEmail, name: rawName } = googleSchema.parse(req.body);
+    const tokenToVerify = id_token || token;
+
+    let email = rawEmail;
+    let fullName = rawName;
+
+    if (tokenToVerify) {
+      try {
+        const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${tokenToVerify}`, { timeout: 10000 });
+        if (googleRes.data && googleRes.data.email) {
+          email = googleRes.data.email;
+          fullName = googleRes.data.name || fullName;
+        }
+      } catch (e) {
+        if (!email) {
+          throw new HttpError(401, 'Invalid or expired Google token');
+        }
+      }
+    }
+
+    if (!email) {
+      throw new HttpError(400, 'Google authentication payload missing valid email');
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      const dummyPasswordHash = await bcrypt.hash(Math.random().toString(36), 10);
+      user = await User.create({
+        email: email.toLowerCase(),
+        passwordHash: dummyPasswordHash,
+        fullName: fullName || 'Google User',
+        role: 'analyst',
+        isActive: true,
+      });
+    }
+
+    if (!user.isActive) throw new HttpError(403, 'Account is inactive');
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    await AuditLog.create({ userId: user._id, action: 'google_login', resource: 'user', resourceId: String(user._id), ipAddress: req.ip });
+
+    const jwtToken = createToken(String(user._id), user.role);
+    res.json({ access_token: jwtToken, token_type: 'bearer', user_id: String(user._id), email: user.email, role: user.role });
+  } catch (err) { next(err); }
+}
+
 export async function me(req: AuthRequest, res: Response): Promise<void> {
   const user = await User.findById(req.user!.id).select('-passwordHash').lean();
   res.json(user);

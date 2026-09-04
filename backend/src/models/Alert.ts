@@ -7,8 +7,12 @@ export interface IAlert extends Document {
   alertType: string;
   title: string;
   message: string;
+  status: 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'ESCALATED';
   isResolved: boolean;
+  acknowledgedAt?: Date;
   resolvedAt?: Date;
+  escalatedAt?: Date;
+  assignedTo?: string;
   createdAt: Date;
 }
 
@@ -18,10 +22,15 @@ const alertSchema = new Schema<IAlert>({
   alertType: { type: String, required: true },
   title: { type: String, required: true },
   message: { type: String, required: true },
+  status: { type: String, enum: ['OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'ESCALATED'], default: 'OPEN' },
   isResolved: { type: Boolean, default: false },
+  acknowledgedAt: Date,
   resolvedAt: Date,
+  escalatedAt: Date,
+  assignedTo: String,
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
+alertSchema.index({ status: 1 });
 alertSchema.index({ isResolved: 1 });
 alertSchema.index({ severity: 1 });
 alertSchema.index({ createdAt: -1 });

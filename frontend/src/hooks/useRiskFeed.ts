@@ -3,22 +3,29 @@ import type { RiskFeedEvent } from '../types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
 
+export type WsStatus = 'connected' | 'reconnecting' | 'offline';
+
 export function useRiskFeed(onEvent: (event: RiskFeedEvent) => void) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [connected, setConnected] = useState(false);
+  const [status, setStatus] = useState<WsStatus>('offline');
+  const [eventCount, setEventCount] = useState(0);
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
 
   const connect = useCallback(() => {
     const token = localStorage.getItem('access_token');
-    if (!token) return;
+    if (!token) {
+      setStatus('offline');
+      return;
+    }
 
+    setStatus('reconnecting');
     const ws = new WebSocket(`${WS_URL}/ws/risk-feed`);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setConnected(true);
+      setStatus('connected');
       console.log('[WS] Connected to risk feed');
     };
 
@@ -26,6 +33,7 @@ export function useRiskFeed(onEvent: (event: RiskFeedEvent) => void) {
       try {
         const data = JSON.parse(e.data) as RiskFeedEvent;
         if (data.type !== 'ping') {
+          setEventCount(c => c + 1);
           onEventRef.current(data);
         }
       } catch {
@@ -34,7 +42,7 @@ export function useRiskFeed(onEvent: (event: RiskFeedEvent) => void) {
     };
 
     ws.onclose = () => {
-      setConnected(false);
+      setStatus('reconnecting');
       console.log('[WS] Disconnected — reconnecting in 3s...');
       reconnectTimer.current = setTimeout(connect, 3000);
     };
@@ -52,5 +60,5 @@ export function useRiskFeed(onEvent: (event: RiskFeedEvent) => void) {
     };
   }, [connect]);
 
-  return { connected };
+  return { connected: status === 'connected', status, eventCount };
 }

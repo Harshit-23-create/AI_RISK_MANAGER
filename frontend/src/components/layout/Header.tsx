@@ -1,122 +1,176 @@
 import { useState } from 'react';
-import { LogOut, Play, Square, Zap } from 'lucide-react';
+import { LogOut, Zap, Menu, X, Radio, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
+import type { WsStatus } from '../../hooks/useRiskFeed';
+import { useRiskFeed } from '../../hooks/useRiskFeed';
 import { simulationApi } from '../../services/api';
+import { SimulationCenterModal } from '../ui/SimulationCenterModal';
+import { NavLink } from 'react-router-dom';
+
+const navItems = [
+  { to: '/', label: 'Dashboard' },
+  { to: '/transactions', label: 'Transactions' },
+  { to: '/alerts', label: 'Alerts' },
+  { to: '/network', label: 'Network Security' },
+];
 
 export default function Header() {
   const { user, logout } = useAuth();
-  const [simRunning, setSimRunning] = useState(false);
+  const [simModalOpen, setSimModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const toggleSim = async () => {
-    setLoading(true);
-    try {
-      if (simRunning) {
-        await simulationApi.stop();
-        setSimRunning(false);
-        toast.success('Simulation stopped');
-      } else {
-        await simulationApi.start(5, 0.25);
-        setSimRunning(true);
-        toast.success('Simulation started');
-      }
-    } catch (e: any) {
-      toast.error(e?.response?.data?.error?.message || 'Failed to toggle simulation');
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { status: wsStatus } = useRiskFeed(() => {});
 
   const startDemo = async () => {
     setLoading(true);
     try {
       await simulationApi.demo();
-      setSimRunning(true);
-      toast.success('Demo mode started! Generating synthetic transactions...');
+      toast.success('Demo mode activated with synthetic transactions stream!');
     } catch (e: any) {
       toast.error(e?.response?.data?.error?.message || 'Failed to start demo');
-      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
+  const getWsPill = (status: WsStatus) => {
+    if (status === 'connected') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          Live WebSocket
+        </span>
+      );
+    }
+    if (status === 'reconnecting') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          Reconnecting...
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+        <span className="w-2 h-2 rounded-full bg-rose-400" />
+        Offline
+      </span>
+    );
+  };
+
   return (
-    <header className="h-auto min-h-[60px] flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shrink-0 gap-3 md:gap-0" style={{
-      background: 'var(--color-bg-secondary)',
-      borderBottom: '1px solid var(--color-border)',
-    }}>
-      {/* Live indicator */}
-      <div className="flex items-center justify-between w-full md:w-auto">
-        <div className="flex items-center gap-2">
-          <div className="live-dot" style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: simRunning ? '#10b981' : '#475569',
-          }} />
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-            {simRunning ? 'Simulation running' : 'Simulation stopped'}
-          </span>
-        </div>
-        
-        {/* Mobile logout button (hidden on desktop) */}
-        <button
-          onClick={logout}
-          className="md:hidden flex items-center p-1.5 rounded-lg border border-[var(--color-border)] text-slate-400 hover:text-white"
-        >
-          <LogOut size={14} />
-        </button>
-      </div>
+    <>
+      <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md sticky top-0 z-40">
+        {/* Left: Mobile Menu Toggle & Brand */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
-        <button
-          id="demo-mode-btn"
-          onClick={startDemo}
-          disabled={loading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(139,92,246,0.4)',
-            background: 'rgba(139,92,246,0.1)', color: '#8b5cf6',
-            fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <Zap size={14} />
-          <span className="hidden sm:inline">Demo Mode</span>
-        </button>
-
-        <button
-          id="simulation-toggle-btn"
-          onClick={toggleSim}
-          disabled={loading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 8,
-            border: `1px solid ${simRunning ? 'rgba(239,68,68,0.4)' : 'rgba(59,130,246,0.4)'}`,
-            background: simRunning ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)',
-            color: simRunning ? '#ef4444' : '#3b82f6',
-            fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          {simRunning ? <Square size={14} /> : <Play size={14} />}
-          <span className="hidden sm:inline">{simRunning ? 'Stop' : 'Start'} Simulation</span>
-        </button>
-
-        <div className="hidden md:block px-3 py-1 rounded-full text-xs text-slate-400 bg-blue-500/10 border border-blue-500/20">
-          {user?.email}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">SOC Center</span>
+            </div>
+          </div>
         </div>
 
-        <button
-          id="logout-btn"
-          onClick={logout}
-          className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-slate-400 hover:text-white transition-colors"
-        >
-          <LogOut size={14} />
-        </button>
-      </div>
-    </header>
+        {/* Right: Controls & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* WS Status */}
+          <div className="hidden lg:block">{getWsPill(wsStatus)}</div>
+
+          {/* Demo Mode Button */}
+          <button
+            id="demo-mode-btn"
+            onClick={startDemo}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-bold hover:bg-purple-500/20 transition-all shadow-sm"
+          >
+            <Zap className="w-3.5 h-3.5 text-purple-400" />
+            <span>Demo Mode</span>
+          </button>
+
+          {/* Simulation Center */}
+          <button
+            id="simulation-toggle-btn"
+            onClick={() => setSimModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold hover:bg-cyan-500/20 transition-all shadow-sm"
+          >
+            <Radio className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Simulation Center</span>
+          </button>
+
+          {/* Profile Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80 text-slate-200 hover:border-cyan-500/40 transition-all"
+            >
+              <div className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                {user?.email ? user.email.substring(0, 2).toUpperCase() : 'AD'}
+              </div>
+              <span className="hidden md:inline text-xs font-medium text-slate-300 max-w-[120px] truncate">
+                {user?.email || 'admin@riskmanager.ai'}
+              </span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-800 bg-slate-900 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-2.5 border-b border-slate-800">
+                  <p className="text-xs font-bold text-white truncate">{user?.email}</p>
+                  <p className="text-[10px] text-cyan-400 uppercase font-mono mt-0.5">Role: {user?.role || 'SOC Administrator'}</p>
+                </div>
+                <div className="px-4 py-2 border-b border-slate-800 text-[11px] text-slate-400">
+                  <span>Status: </span>
+                  <span className="text-emerald-400 font-semibold">Active Analyst</span>
+                </div>
+                <button
+                  id="logout-btn"
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 space-y-2 animate-in slide-in-from-top duration-200 z-30">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  isActive ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:bg-slate-800'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <div className="pt-2 border-t border-slate-800 flex justify-between items-center">
+            <span className="text-[11px] text-slate-400">WebSocket Status</span>
+            {getWsPill(wsStatus)}
+          </div>
+        </div>
+      )}
+
+      {/* Simulation Modal */}
+      <SimulationCenterModal isOpen={simModalOpen} onClose={() => setSimModalOpen(false)} />
+    </>
   );
 }

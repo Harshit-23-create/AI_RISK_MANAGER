@@ -40,14 +40,34 @@ export const authApi = {
     api.post<TokenResponse>('/auth/login', data).then(r => r.data),
   register: (data: { email: string; password: string; full_name?: string }) =>
     api.post<TokenResponse>('/auth/register', data).then(r => r.data),
+  google: (data: { id_token?: string; token?: string; email?: string; name?: string }) =>
+    api.post<TokenResponse>('/auth/google', data).then(r => r.data),
   me: () => api.get('/auth/me').then(r => r.data),
 };
 
 // ── Transactions ─────────────────────────────────────
 export const transactionsApi = {
-  list: (page = 1, pageSize = 50, decision?: string) =>
+  list: (params?: {
+    page?: number;
+    pageSize?: number;
+    decision?: string;
+    userId?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    fromDate?: string;
+    toDate?: string;
+  }) =>
     api.get<TransactionListResponse>('/transactions', {
-      params: { page, page_size: pageSize, decision }
+      params: {
+        page: params?.page || 1,
+        page_size: params?.pageSize || 50,
+        decision: params?.decision,
+        user_id: params?.userId,
+        min_amount: params?.minAmount,
+        max_amount: params?.maxAmount,
+        from_date: params?.fromDate,
+        to_date: params?.toDate,
+      }
     }).then(r => r.data),
   get: (id: string) =>
     api.get<Transaction>(`/transactions/${id}`).then(r => r.data),
@@ -65,12 +85,16 @@ export const riskApi = {
 
 // ── Alerts ───────────────────────────────────────────
 export const alertsApi = {
-  list: (page = 1, severity?: string, unresolvedOnly = false) =>
+  list: (page = 1, severity?: string, status?: string, unresolvedOnly = false) =>
     api.get<AlertListResponse>('/alerts', {
-      params: { page, severity, unresolved_only: unresolvedOnly }
+      params: { page, severity, status, unresolved_only: unresolvedOnly }
     }).then(r => r.data),
+  acknowledge: (id: string) =>
+    api.patch(`/alerts/${id}/acknowledge`).then(r => r.data),
   resolve: (id: string) =>
     api.patch(`/alerts/${id}/resolve`).then(r => r.data),
+  escalate: (id: string) =>
+    api.patch(`/alerts/${id}/escalate`).then(r => r.data),
 };
 
 // ── Dashboard ─────────────────────────────────────────
@@ -92,6 +116,8 @@ export const simulationApi = {
   stop: () => api.post('/simulation/stop').then(r => r.data),
   status: () => api.get('/simulation/status').then(r => r.data),
   demo: () => api.post('/simulation/demo').then(r => r.data),
+  triggerScenario: (scenario: string) =>
+    api.post('/simulation/trigger', { scenario }).then(r => r.data),
 };
 
 // ── Models ────────────────────────────────────────────

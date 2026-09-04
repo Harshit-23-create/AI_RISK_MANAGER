@@ -1,61 +1,63 @@
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard, ArrowLeftRight, Bell, Network, ShieldCheck
-} from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Bell, Network, ShieldCheck, Radio } from 'lucide-react';
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { to: '/alerts', icon: Bell, label: 'Alerts' },
-  { to: '/network', icon: Network, label: 'Network' },
+  { to: '/network', icon: Network, label: 'Network Security' },
 ];
 
 export default function Sidebar() {
   return (
-    <aside className="w-full md:w-[220px] h-auto md:min-h-screen flex flex-col shrink-0" style={{
-      background: 'var(--color-bg-secondary)',
-      borderRight: '1px solid var(--color-border)',
-      borderBottom: '1px solid var(--color-border)',
-    }}>
-      {/* Logo */}
-      <div className="flex items-center justify-between md:justify-start gap-3 p-4 md:p-6 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={28} color="var(--color-accent-blue)" strokeWidth={1.5} />
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-              AI Risk
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--color-accent-cyan)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Manager
-            </div>
+    <aside className="hidden md:flex w-60 min-h-screen flex-col shrink-0 bg-slate-900 border-r border-slate-800">
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 p-6 border-b border-slate-800">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 text-cyan-400 shadow-md">
+          <ShieldCheck className="w-6 h-6" />
+        </div>
+        <div>
+          <div className="text-sm font-extrabold text-white tracking-tight leading-none">
+            AI Risk Manager
+          </div>
+          <div className="text-[10px] text-cyan-400 font-mono font-bold uppercase tracking-widest mt-1">
+            Enterprise SOC
           </div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex md:flex-col overflow-x-auto overflow-y-hidden md:overflow-visible p-2 md:p-3 flex-1 gap-2 whitespace-nowrap">
+      {/* Nav Menu */}
+      <nav className="flex-1 p-4 space-y-1.5">
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2">
+          Operations & Intelligence
+        </div>
         {nav.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
-            className={({ isActive }) => 
-              `flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isActive 
-                  ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' 
-                  : 'text-slate-400 hover:bg-white/5 border border-transparent'
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
+                isActive
+                  ? 'bg-gradient-to-r from-cyan-500/10 to-blue-500/10 text-cyan-400 border border-cyan-500/30 shadow-md'
+                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border border-transparent'
               }`
             }
           >
-            <Icon size={18} strokeWidth={1.5} />
-            {label}
+            <Icon className="w-4 h-4" />
+            <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="hidden md:block p-4 text-center text-[10px] text-slate-500 border-t border-[var(--color-border)]">
-        v1.0.0 · Simulation Mode
+      {/* Sidebar Footer */}
+      <div className="p-4 border-t border-slate-800 bg-slate-950/40">
+        <div className="flex items-center justify-between text-[11px] text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" /> DPI Engine Active
+          </span>
+          <span className="font-mono text-[10px] text-slate-500">v2.4.0</span>
+        </div>
       </div>
     </aside>
   );
