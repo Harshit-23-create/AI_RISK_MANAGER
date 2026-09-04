@@ -131,11 +131,10 @@ export default function TransactionDetail() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 pb-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'border-cyan-400 text-cyan-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`flex items-center gap-2 pb-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
+              ? 'border-cyan-400 text-cyan-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
           >
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
@@ -147,14 +146,14 @@ export default function TransactionDetail() {
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-6">
-               <RiskScoreGauge
+              <RiskScoreGauge
                 score={risk?.risk_score || 0}
                 decision={risk?.decision}
                 confidence={risk?.confidence}
               />
             </div>
             <div>
-               <RiskFactorBreakdown breakdown={risk?.breakdown} />
+              <RiskFactorBreakdown breakdown={risk?.breakdown} />
             </div>
           </div>
         )}
@@ -281,7 +280,7 @@ export default function TransactionDetail() {
               <div className="relative">
                 <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-purple-500 border-2 border-slate-900" />
                 <span className="text-sm font-bold text-white block">Decision Outputted: {risk?.decision || 'ALLOW'}</span>
-                <span className="text-xs text-slate-400 block mt-1">Confidence rating {(risk?.confidence || 0.95) * 100}%</span>
+                <span className="text-xs text-slate-400 block mt-1">Confidence rating {((risk?.confidence || 0.95) * 100).toFixed(1)}%</span>
                 <span className="text-[10px] text-slate-500 font-mono mt-1 block">T+18ms</span>
               </div>
             </div>
