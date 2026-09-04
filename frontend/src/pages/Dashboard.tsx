@@ -65,18 +65,14 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [fetchStats]);
 
-  // Flush WebSocket events into live feed
   useEffect(() => {
     const flush = setInterval(() => {
       if (!isFeedPaused && pendingEvents.current.length > 0) {
         const incoming = pendingEvents.current;
         pendingEvents.current = [];
-
-        // Track new IDs for highlight pulse
         const addedIds = new Set(incoming.map(e => e.transaction_id!).filter(Boolean));
         setNewRowIds(addedIds);
         setTimeout(() => setNewRowIds(new Set()), 3000);
-
         setFeed(prev => [...incoming, ...prev].slice(0, MAX_FEED_ROWS));
       }
     }, 1500);
@@ -86,19 +82,16 @@ export default function Dashboard() {
   const { connected, status: wsStatus } = useRiskFeed((event) => {
     if (event.type === 'risk_assessment') {
       pendingEvents.current = [event, ...pendingEvents.current].slice(0, MAX_FEED_ROWS);
-
-      // Trigger high-risk toast notification
       if (event.risk_score && event.risk_score >= 75) {
         addToast(
           'error',
           `HIGH RISK: ${event.decision || 'BLOCK'}`,
-          `Transaction ${truncateId(event.transaction_id || '', 10)} scored ${Math.round(event.risk_score)}/100 (${formatCurrency(event.amount || 0, event.currency)})`
+          `Tx ${truncateId(event.transaction_id || '', 10)} scored ${Math.round(event.risk_score)}/100 (${formatCurrency(event.amount || 0, event.currency)})`
         );
       }
     }
   });
 
-  // Calculate telemetry metrics derived from actual data
   const total = stats?.total_transactions || 0;
   const blocks = stats?.decision_breakdown?.block || 0;
   const stepUps = stats?.decision_breakdown?.step_up || 0;
@@ -106,7 +99,7 @@ export default function Dashboard() {
   const allows = stats?.decision_breakdown?.allow || 0;
   const allowRate = total > 0 ? ((allows / total) * 100).toFixed(1) : '100.0';
   const highRiskCount = blocks + stepUps;
-  const txVelocity = (total > 0 ? (total / 120).toFixed(1) : '0.0'); // transactions per min estimate
+  const txVelocity = (total > 0 ? (total / 120).toFixed(1) : '0.0');
 
   const filteredFeed = feed.filter((item) => {
     const matchesSearch =
@@ -114,9 +107,7 @@ export default function Dashboard() {
       item.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.user_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.ip_address?.includes(searchQuery);
-
     const matchesDecision = decisionFilter === 'ALL' || item.decision === decisionFilter;
-
     return matchesSearch && matchesDecision;
   });
 
@@ -130,69 +121,66 @@ export default function Dashboard() {
     : [];
 
   return (
-    <div className="space-y-8">
-      {/* Toast Notifications */}
+    <div className="space-y-6">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Top Banner / Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md">
+      {/* ── Page Header ────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black text-white tracking-tight">Risk Operations Center (SOC)</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              Live DPI & AI Telemetry
+          <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+            Risk Operations Center
+            <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded">
+              Live DPI
             </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">Real-time payment fraud prevention & network deep packet inspection</p>
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5">Real-time payment fraud prevention & network deep packet inspection</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300">
-            <Radio className={`w-3.5 h-3.5 ${wsStatus === 'connected' ? 'text-emerald-400 animate-pulse' : 'text-rose-400'}`} />
-            <span>Live WebSocket: <strong className="text-white">{wsStatus === 'connected' ? 'Feed Connected' : wsStatus === 'reconnecting' ? 'Reconnecting' : 'Offline'}</strong></span>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* WS Status */}
+          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${
+            wsStatus === 'connected'
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              : wsStatus === 'reconnecting'
+              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+              : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+          }`}>
+            <Radio className={`w-3 h-3 ${wsStatus === 'connected' ? 'animate-pulse' : ''}`} />
+            <span>{wsStatus === 'connected' ? 'Feed Connected' : wsStatus === 'reconnecting' ? 'Reconnecting' : 'Offline'}</span>
           </div>
 
           <button
             onClick={() => fetchStats()}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-            title="Refresh Telemetry"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
+            title="Refresh"
           >
             <Clock className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* 8 Live KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Primary KPI Row (5 cards) ───────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard
           title="Total Transactions"
           value={total.toLocaleString()}
-          subtext="Processed in database"
+          subtext="Processed in DB"
           change={4.2}
           icon={Activity}
           iconColor="text-cyan-400"
           accentColor="from-cyan-500/10 to-blue-900/10"
         />
         <KpiCard
-          title="Transaction Velocity"
-          value={`${txVelocity} /min`}
-          subtext="Estimated throughput"
-          change={1.8}
-          icon={Zap}
-          iconColor="text-blue-400"
-          accentColor="from-blue-500/10 to-indigo-900/10"
-        />
-        <KpiCard
-          title="Average Risk Score"
-          value={stats ? `${stats.average_risk_score.toFixed(1)} / 100` : '—'}
-          subtext="Model weighted aggregate"
+          title="Avg Risk Score"
+          value={stats ? `${stats.average_risk_score.toFixed(1)}` : '—'}
+          subtext="/ 100 aggregate"
           change={-2.1}
           icon={TrendingUp}
           iconColor="text-amber-400"
           accentColor="from-amber-500/10 to-orange-900/10"
         />
         <KpiCard
-          title="Allow Approval Rate"
+          title="Approval Rate"
           value={`${allowRate}%`}
           subtext="Successful payments"
           change={0.5}
@@ -203,60 +191,69 @@ export default function Dashboard() {
         <KpiCard
           title="High Risk Events"
           value={highRiskCount.toLocaleString()}
-          subtext="Block & Step-Up total"
+          subtext="Block & Step-Up"
           change={8.4}
           icon={ShieldAlert}
           iconColor="text-orange-400"
           accentColor="from-orange-500/10 to-red-900/10"
         />
         <KpiCard
-          title="Active SOC Alerts"
+          title="Active Alerts"
           value={stats?.active_alerts?.toLocaleString() ?? '0'}
-          subtext="Requires analyst review"
+          subtext="Requires review"
           icon={AlertTriangle}
           iconColor="text-rose-400"
           accentColor="from-rose-500/10 to-pink-900/10"
         />
-        <KpiCard
-          title="Blocked Payments"
-          value={blocks.toLocaleString()}
-          subtext="Critical threats stopped"
-          icon={ShieldX}
-          iconColor="text-rose-500"
-          accentColor="from-rose-600/10 to-red-950/10"
-        />
-        <KpiCard
-          title="Step-Up Challenges"
-          value={stepUps.toLocaleString()}
-          subtext="2FA verification triggers"
-          icon={Eye}
-          iconColor="text-amber-400"
-          accentColor="from-amber-600/10 to-yellow-950/10"
-        />
       </div>
 
-      {/* Analytics Row: Timeline & Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Risk Score Timeline */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-            <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                Real-Time Risk Timeline & Spikes
-              </h2>
-              <p className="text-[11px] text-slate-400">Score variations and anomaly spikes over time</p>
-            </div>
+      {/* ── Secondary Stats Row ─────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <Zap className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">TX Velocity</p>
+            <p className="text-base font-bold text-white">{txVelocity}<span className="text-xs text-slate-400 font-normal"> /min</span></p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <ShieldX className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">Blocked</p>
+            <p className="text-base font-bold text-white">{blocks.toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Eye className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">Step-Up</p>
+            <p className="text-base font-bold text-white">{stepUps.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
 
-            {/* Time range selector */}
-            <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+      {/* ── Charts Row ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Risk Timeline */}
+        <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-white">Risk Score Timeline</h2>
+              <p className="text-[11px] text-slate-400">Score variations and anomaly spikes</p>
+            </div>
+            <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
               {(['1H', '6H', '24H', '7D'] as const).map((r) => (
                 <button
                   key={r}
                   onClick={() => setTimeRange(r)}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
-                    timeRange === r
-                      ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                  className={`px-2 py-1 text-[11px] font-bold rounded-md transition-all ${
+                    timeRange === r ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   {r}
@@ -264,8 +261,7 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={stats?.risk_timeline ?? []}>
               <defs>
                 <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
@@ -273,146 +269,129 @@ export default function Dashboard() {
                   <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={(t) => formatTimestamp(t)}
-                tick={{ fill: '#64748b', fontSize: 10 }}
-              />
+              <XAxis dataKey="timestamp" tickFormatter={(t) => formatTimestamp(t)} tick={{ fill: '#64748b', fontSize: 10 }} />
               <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} />
               <Tooltip
-                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }}
+                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8 }}
                 labelStyle={{ color: '#94a3b8', fontSize: 11 }}
                 formatter={(val: any) => [`${Number(val).toFixed(1)} / 100`, 'Risk Score']}
               />
-              <Area
-                type="monotone"
-                dataKey="risk_score"
-                stroke="#06b6d4"
-                fill="url(#riskGrad)"
-                strokeWidth={2.5}
-                dot={false}
-              />
+              <Area type="monotone" dataKey="risk_score" stroke="#06b6d4" fill="url(#riskGrad)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Decision Distribution Donut */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="border-b border-slate-800 pb-3 mb-4">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                Decision Breakdown
-              </h2>
-              <p className="text-[11px] text-slate-400">ALLOW, MONITOR, STEP-UP & BLOCK ratios</p>
-            </div>
-
-            <ResponsiveContainer width="100%" height={250}>
+        {/* Decision Donut */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-lg flex flex-col">
+          <div className="mb-2">
+            <h2 className="text-sm font-bold text-white">Decision Breakdown</h2>
+            <p className="text-[11px] text-slate-400">ALLOW / MONITOR / STEP-UP / BLOCK</p>
+          </div>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={75}
+                  innerRadius={50}
+                  outerRadius={80}
                   dataKey="value"
-                  paddingAngle={4}
+                  paddingAngle={3}
                 >
                   {pieData.map((entry) => (
                     <Cell key={entry.name} fill={DECISION_COLORS[entry.name] ?? '#64748b'} />
                   ))}
                 </Pie>
-                <Legend formatter={(v) => <span className="text-[11px] text-slate-300 font-semibold">{v}</span>} />
-                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }} />
+                <Legend
+                  iconSize={8}
+                  formatter={(v) => <span className="text-[11px] text-slate-300 font-semibold">{v}</span>}
+                />
+                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-4 text-[11px] pt-3 border-t border-slate-800 font-mono">
-            <div className="text-emerald-400">ALLOW: <strong>{allows}</strong></div>
-            <div className="text-blue-400">MONITOR: <strong>{monitors}</strong></div>
-            <div className="text-amber-400">STEP-UP: <strong>{stepUps}</strong></div>
-            <div className="text-rose-400">BLOCK: <strong>{blocks}</strong></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-mono border-t border-slate-800 pt-3 mt-2">
+            <div className="flex justify-between"><span className="text-emerald-400">ALLOW</span><strong className="text-white">{allows}</strong></div>
+            <div className="flex justify-between"><span className="text-blue-400">MONITOR</span><strong className="text-white">{monitors}</strong></div>
+            <div className="flex justify-between"><span className="text-amber-400">STEP-UP</span><strong className="text-white">{stepUps}</strong></div>
+            <div className="flex justify-between"><span className="text-rose-400">BLOCK</span><strong className="text-white">{blocks}</strong></div>
           </div>
         </div>
       </div>
 
-      {/* Live Risk Feed Section */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      {/* ── Live Risk Feed ──────────────────────────────────────────── */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-lg">
+        {/* Feed Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-              <Radio className="w-5 h-5 animate-pulse" />
+            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
+              <Radio className="w-4 h-4 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                Live Risk Feed Operations Stream
-              </h2>
-              <p className="text-xs text-slate-400">Streaming transaction telemetry via Redis & WebSockets</p>
+              <h2 className="text-sm font-bold text-white">Live Risk Feed</h2>
+              <p className="text-[11px] text-slate-400">Streaming via Redis & WebSockets</p>
             </div>
           </div>
 
-          {/* Controls: Search, Decision Filter & Pause/Resume */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-500" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                placeholder="Search Tx ID / User / IP..."
+                placeholder="Search Tx / User / IP…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500 w-48"
+                className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500 w-44"
               />
             </div>
-
             <select
               value={decisionFilter}
               onChange={(e) => setDecisionFilter(e.target.value)}
-              className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Decisions</option>
+              <option value="ALL">All</option>
               <option value="ALLOW">ALLOW</option>
               <option value="MONITOR">MONITOR</option>
               <option value="STEP-UP">STEP-UP</option>
               <option value="BLOCK">BLOCK</option>
             </select>
-
             <button
               onClick={() => setIsFeedPaused(!isFeedPaused)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                 isFeedPaused
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
               }`}
             >
               {isFeedPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-              <span>{isFeedPaused ? 'Resume Feed' : 'Pause Feed'}</span>
+              <span className="hidden sm:inline">{isFeedPaused ? 'Resume' : 'Pause'}</span>
             </button>
           </div>
         </div>
 
-        {/* Feed Table */}
+        {/* Feed Table — responsive with hidden columns on mobile */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[640px]">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
-                <th className="p-3">Transaction ID</th>
-                <th className="p-3">Time</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">User</th>
-                <th className="p-3">IP Address</th>
-                <th className="p-3">Risk Score</th>
-                <th className="p-3">Decision</th>
-                <th className="p-3">Top Risk Factor</th>
+              <tr className="border-b border-slate-800 text-slate-500 uppercase font-mono text-[10px] tracking-wider">
+                <th className="px-4 py-2.5">Transaction ID</th>
+                <th className="px-4 py-2.5">Time</th>
+                <th className="px-4 py-2.5">Amount</th>
+                <th className="px-4 py-2.5 hidden sm:table-cell">User</th>
+                <th className="px-4 py-2.5 hidden md:table-cell">IP Address</th>
+                <th className="px-4 py-2.5">Risk</th>
+                <th className="px-4 py-2.5">Decision</th>
+                <th className="px-4 py-2.5 hidden lg:table-cell">Top Factor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
+            <tbody className="divide-y divide-slate-800/50">
               {filteredFeed.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-500">
-                    <p className="text-xs">No live transactions in feed matching filters.</p>
-                    <p className="text-[11px] text-slate-600 mt-1">
-                      Start the Simulation Center to stream live synthetic payment activity.
-                    </p>
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
+                    <Radio className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs">No transactions in feed</p>
+                    <p className="text-[11px] text-slate-600 mt-1">Use Simulation Center to stream live synthetic data.</p>
                   </td>
                 </tr>
               ) : (
@@ -422,49 +401,41 @@ export default function Dashboard() {
                     <tr
                       key={`${event.transaction_id}-${idx}`}
                       onClick={() => event.transaction_id && navigate(`/transactions/${event.transaction_id}`)}
-                      className={`cursor-pointer transition-colors duration-300 hover:bg-cyan-950/20 ${
-                        isNew ? 'bg-cyan-500/10 border-l-2 border-cyan-400' : ''
+                      className={`cursor-pointer transition-colors duration-200 hover:bg-slate-800/40 ${
+                        isNew ? 'bg-cyan-500/8 border-l-2 border-l-cyan-400' : ''
                       }`}
                     >
-                      <td className="p-3 font-mono text-cyan-400 font-bold">
-                        {truncateId(event.transaction_id || '', 14)}
+                      <td className="px-4 py-2.5 font-mono text-cyan-400 font-bold">
+                        {truncateId(event.transaction_id || '', 12)}
                       </td>
-                      <td className="p-3 text-slate-400 font-mono">
+                      <td className="px-4 py-2.5 text-slate-400 font-mono text-[11px]">
                         {formatTimestamp(event.timestamp || '')}
                       </td>
-                      <td className="p-3 font-bold text-white">
+                      <td className="px-4 py-2.5 font-bold text-white">
                         {formatCurrency(event.amount || 0, event.currency)}
                       </td>
-                      <td className="p-3 text-slate-300 font-mono">
+                      <td className="px-4 py-2.5 text-slate-300 font-mono hidden sm:table-cell text-[11px]">
                         {event.user_id}
                       </td>
-                      <td className="p-3 text-slate-400 font-mono">
-                        {event.ip_address || '103.45.12.9'}
+                      <td className="px-4 py-2.5 text-slate-400 font-mono hidden md:table-cell text-[11px]">
+                        {event.ip_address || '—'}
                       </td>
-                      <td className="p-3">
+                      <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-2 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                          <div className="w-12 h-1.5 rounded-full bg-slate-800 overflow-hidden">
                             <div
-                              className={`h-full ${
-                                (event.risk_score || 0) > 80
-                                  ? 'bg-rose-500'
-                                  : (event.risk_score || 0) > 50
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              }`}
-                              style={{ width: `${Math.min(100, Math.max(5, event.risk_score || 0))}%` }}
+                              className={`h-full ${(event.risk_score || 0) > 80 ? 'bg-rose-500' : (event.risk_score || 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min(100, Math.max(4, event.risk_score || 0))}%` }}
                             />
                           </div>
-                          <span className="font-bold text-slate-200 font-mono">
-                            {Math.round(event.risk_score || 0)}
-                          </span>
+                          <span className="font-bold text-slate-200 font-mono">{Math.round(event.risk_score || 0)}</span>
                         </div>
                       </td>
-                      <td className="p-3">
+                      <td className="px-4 py-2.5">
                         <RiskBadge decision={event.decision || 'ALLOW'} size="sm" />
                       </td>
-                      <td className="p-3 text-slate-300 max-w-[200px] truncate">
-                        {event.top_factor || 'Normal transaction baseline'}
+                      <td className="px-4 py-2.5 text-slate-400 max-w-[160px] truncate hidden lg:table-cell">
+                        {event.top_factor || 'Normal baseline'}
                       </td>
                     </tr>
                   );
@@ -475,8 +446,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Model Breakdown & System Infrastructure Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* ── Bottom Row: Model Breakdown + System Health ─────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RiskFactorBreakdown />
         <SystemHealthWidget wsConnected={connected} />
       </div>

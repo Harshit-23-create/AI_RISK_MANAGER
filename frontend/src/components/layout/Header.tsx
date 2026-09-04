@@ -1,25 +1,17 @@
 import { useState } from 'react';
-import { LogOut, Zap, Menu, X, Radio, Activity } from 'lucide-react';
+import { LogOut, Zap, Radio, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import type { WsStatus } from '../../hooks/useRiskFeed';
 import { useRiskFeed } from '../../hooks/useRiskFeed';
 import { simulationApi } from '../../services/api';
 import { SimulationCenterModal } from '../ui/SimulationCenterModal';
-import { NavLink } from 'react-router-dom';
 
-const navItems = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/transactions', label: 'Transactions' },
-  { to: '/alerts', label: 'Alerts' },
-  { to: '/network', label: 'Network Security' },
-];
 
 export default function Header() {
   const { user, logout } = useAuth();
   const [simModalOpen, setSimModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { status: wsStatus } = useRiskFeed(() => {});
@@ -64,21 +56,10 @@ export default function Header() {
   return (
     <>
       <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md sticky top-0 z-40">
-        {/* Left: Mobile Menu Toggle & Brand */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">SOC Center</span>
-            </div>
-          </div>
+        {/* Left: Brand */}
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">SOC Center</span>
         </div>
 
         {/* Right: Controls & User Profile */}
@@ -144,30 +125,6 @@ export default function Header() {
           </div>
         </div>
       </header>
-
-      {/* Mobile Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 space-y-2 animate-in slide-in-from-top duration-200 z-30">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                  isActive ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:bg-slate-800'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-          <div className="pt-2 border-t border-slate-800 flex justify-between items-center">
-            <span className="text-[11px] text-slate-400">WebSocket Status</span>
-            {getWsPill(wsStatus)}
-          </div>
-        </div>
-      )}
 
       {/* Simulation Modal */}
       <SimulationCenterModal isOpen={simModalOpen} onClose={() => setSimModalOpen(false)} />
