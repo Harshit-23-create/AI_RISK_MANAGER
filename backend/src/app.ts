@@ -7,6 +7,8 @@ import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
 import { setupSwagger } from './utils/swagger';
+import mongoose from 'mongoose';
+import { redis } from './config/redis';
 
 import authRoutes from './routes/auth';
 import transactionRoutes from './routes/transactions';
@@ -98,7 +100,12 @@ app.use('/api/explain',     explainRoutes);
 app.use('/api/models',      modelsRoutes);
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'backend' });
+  res.json({
+    status: 'ok',
+    service: 'backend',
+    mongodb: mongoose.connection.readyState === 1,
+    redis: redis.status === 'ready',
+  });
 });
 
 // ── Error handler ─────────────────────────────────────────────────────────────

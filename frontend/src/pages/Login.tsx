@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Eye, EyeOff, AlertCircle, Bot, Zap, HelpCircle } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, AlertCircle, Zap, HelpCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -61,7 +61,7 @@ export default function Login() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 relative z-10">
+      <div className="w-full max-w-lg bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl backdrop-blur-xl space-y-8 relative z-10">
         {/* Brand Logo & Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex p-3.5 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 text-cyan-400 shadow-lg">
@@ -89,7 +89,7 @@ export default function Login() {
           >
             {demoLoading ? (
               <>
-                <Bot className="w-4 h-4 animate-spin" /> Authenticating Demo Admin...
+                <Loader2 className="w-4 h-4 animate-spin" /> Authenticating Demo Admin...
               </>
             ) : (
               'One-Click Demo Admin Login'
@@ -152,7 +152,13 @@ export default function Login() {
             disabled={loading || demoLoading}
             className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Authenticating...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
 
@@ -160,7 +166,7 @@ export default function Login() {
         <button
           type="button"
           onClick={handleGoogleClick}
-          className="w-full py-2.5 px-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold text-xs transition-all flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300 font-bold text-xs transition-all flex items-center justify-center gap-3 shadow-sm"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path

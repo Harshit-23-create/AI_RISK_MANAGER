@@ -130,7 +130,7 @@ export default function Dashboard() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
@@ -149,7 +149,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300">
             <Radio className={`w-3.5 h-3.5 ${wsStatus === 'connected' ? 'text-emerald-400 animate-pulse' : 'text-rose-400'}`} />
-            <span>Feed: <strong className="text-white capitalize">{wsStatus}</strong></span>
+            <span>Live WebSocket: <strong className="text-white">{wsStatus === 'connected' ? 'Feed Connected' : wsStatus === 'reconnecting' ? 'Reconnecting' : 'Offline'}</strong></span>
           </div>
 
           <button
@@ -236,7 +236,7 @@ export default function Dashboard() {
       </div>
 
       {/* Analytics Row: Timeline & Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Risk Score Timeline */}
         <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl">
           <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
@@ -265,7 +265,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={230}>
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={stats?.risk_timeline ?? []}>
               <defs>
                 <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
@@ -306,7 +306,7 @@ export default function Dashboard() {
               <p className="text-[11px] text-slate-400">ALLOW, MONITOR, STEP-UP & BLOCK ratios</p>
             </div>
 
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -476,7 +476,7 @@ export default function Dashboard() {
       </div>
 
       {/* Model Breakdown & System Infrastructure Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <RiskFactorBreakdown />
         <SystemHealthWidget wsConnected={connected} />
       </div>

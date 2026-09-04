@@ -32,9 +32,9 @@ export const SystemHealthWidget: React.FC<SystemHealthWidgetProps> = ({ wsConnec
 
       setHealth({
         backend: !!res?.data,
-        mongodb: true, // MongoDB connection validated by backend runtime
-        redis: true,   // Redis initialized by server
-        mlService: modelsRes ? !modelsRes.fallback_active : true,
+        mongodb: res?.data?.mongodb ?? false,
+        redis: res?.data?.redis ?? false,
+        mlService: modelsRes ? modelsRes.ml_service_healthy : false,
         websocket: wsConnected,
       });
     } catch (e) {

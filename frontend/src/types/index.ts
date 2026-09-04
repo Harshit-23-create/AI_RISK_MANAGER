@@ -172,6 +172,7 @@ export interface NetworkStats {
 
 // ── Models ────────────────────────────────────────────
 export interface ModelStatus {
+  ml_service_healthy: boolean;
   isolation_forest: { loaded: boolean; features: string[] };
   xgboost: { loaded: boolean; shap_available: boolean; features: string[] };
   fallback_active: boolean;
