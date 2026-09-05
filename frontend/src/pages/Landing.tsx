@@ -59,14 +59,12 @@ export default function Landing() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-            {!isAuthenticated ? (
-              <Link
-                to="/login"
-                className="rounded-lg px-2 py-2 text-xs font-semibold text-slate-300 transition hover:text-white sm:px-3 sm:text-sm"
-              >
-                Sign In
-              </Link>
-            ) : null}
+            <Link
+              to="/login"
+              className="rounded-lg px-2 py-2 text-xs font-semibold text-slate-300 transition hover:text-white sm:px-3 sm:text-sm"
+            >
+              Sign In
+            </Link>
             <Link
               to={isAuthenticated ? "/dashboard" : "/login"}
               className="inline-flex min-h-9 items-center justify-center rounded-lg bg-cyan-500 px-3 text-xs font-bold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:bg-cyan-400 sm:px-4 sm:text-sm"
