@@ -25,7 +25,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route 
         path="/login" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+        element={<Login />} 
       />
       
       {/* Protected Routes wrapped in Layout */}

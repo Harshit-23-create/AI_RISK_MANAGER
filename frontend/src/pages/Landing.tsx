@@ -66,10 +66,10 @@ export default function Landing() {
               Sign In
             </Link>
             <Link
-              to={isAuthenticated ? "/dashboard" : "/login"}
+              to="/login"
               className="inline-flex min-h-9 items-center justify-center rounded-lg bg-cyan-500 px-3 text-xs font-bold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:bg-cyan-400 sm:px-4 sm:text-sm"
             >
-              {isAuthenticated ? "Go to Dashboard" : "Launch Console"}
+              Launch Console
             </Link>
           </div>
         </div>
@@ -104,17 +104,17 @@ export default function Landing() {
 
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
-                  to={isAuthenticated ? "/dashboard" : "/login"}
+                  to="/login"
                   className="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-cyan-500 px-8 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-400 sm:w-auto sm:text-base"
                 >
                   <span className="relative z-10 flex items-center gap-2">
-                    {isAuthenticated ? "Launch Risk Console" : "Get Started"} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    Launch Risk Console <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] transition-transform duration-500 group-hover:translate-x-[100%]" />
                 </Link>
                 
                 <Link
-                  to={isAuthenticated ? "/dashboard" : "/login"}
+                  to="/login"
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-8 text-sm font-bold text-white transition hover:bg-slate-800 sm:w-auto sm:text-base"
                 >
                   Explore Demo Mode
