@@ -1,7 +1,4 @@
-/**
- * WebSocket Manager — broadcasts risk events to all connected clients.
- * Compatible with /ws/risk-feed endpoint expected by the React frontend.
- */
+
 import { WebSocket, WebSocketServer } from 'ws';
 import http from 'http';
 
@@ -24,12 +21,10 @@ class WsManager {
       ws.on('error', () => ws.terminate());
     });
 
-    // Send pings every 30 seconds to keep connections alive
     this.pingInterval = setInterval(() => {
       this.broadcast({ type: 'ping' });
     }, 30000);
 
-    // Listen for Redis pub/sub messages (subscription happens in connectRedis)
     redisSubscriber.on('message', (channel, message) => {
       if (channel === 'risk-events') {
         try {

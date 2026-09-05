@@ -1,19 +1,4 @@
-/**
- * Risk Engine — TypeScript port of the Python risk pipeline.
- *
- * Weights:
- *   transaction  : 0.25
- *   behavioral   : 0.25
- *   network      : 0.20
- *   ml_anomaly   : 0.15
- *   ml_supervised: 0.15
- *
- * Thresholds:
- *   0–30   ALLOW
- *   31–60  MONITOR
- *   61–80  STEP-UP
- *   81–100 BLOCK
- */
+
 import { ITransaction } from '../models/Transaction';
 import { predict, analyzeNetwork, MLPredictRequest, NetworkResponse } from '../ml/mlClient';
 import { config } from '../config/env';
@@ -49,8 +34,6 @@ export interface RiskResult {
   networkEvent: NetworkResponse;
 }
 
-// ── Transaction Scorer ────────────────────────────────────────────────────────
-
 function scoreTransaction(txn: ITransaction, netEvent: NetworkResponse): { score: number; factors: RiskFactor[]; flags: Record<string, unknown> } {
   const factors: RiskFactor[] = [];
   const flags: Record<string, unknown> = {};
@@ -84,8 +67,6 @@ function scoreTransaction(txn: ITransaction, netEvent: NetworkResponse): { score
   flags.failed_attempts = txn.failedAttempts;
   return { score: Math.min(100, score), factors, flags };
 }
-
-// ── Behavioral Scorer ─────────────────────────────────────────────────────────
 
 function scoreBehavioral(txn: ITransaction): { score: number; factors: RiskFactor[]; flags: Record<string, unknown> } {
   const factors: RiskFactor[] = [];
@@ -123,8 +104,6 @@ function scoreBehavioral(txn: ITransaction): { score: number; factors: RiskFacto
   return { score: Math.min(100, score), factors, flags };
 }
 
-// ── Network Scorer ────────────────────────────────────────────────────────────
-
 function scoreNetwork(netEvent: NetworkResponse): { score: number; factors: RiskFactor[]; flags: Record<string, unknown> } {
   const factors: RiskFactor[] = [];
   const flags: Record<string, unknown> = {};
@@ -159,8 +138,6 @@ function scoreNetwork(netEvent: NetworkResponse): { score: number; factors: Risk
   return { score: Math.min(100, score), factors, flags };
 }
 
-// ── Decision Engine ───────────────────────────────────────────────────────────
-
 function makeDecision(score: number): 'ALLOW' | 'MONITOR' | 'STEP-UP' | 'BLOCK' {
   if (score >= config.riskStepup) return 'BLOCK';
   if (score >= config.riskMonitor) return 'STEP-UP';
@@ -192,10 +169,8 @@ function mergeFactors(...factorLists: RiskFactor[][]): RiskFactor[] {
   return merged.sort((a, b) => b.contribution - a.contribution);
 }
 
-// ── Main pipeline entry ───────────────────────────────────────────────────────
-
 export async function computeRisk(txn: ITransaction): Promise<RiskResult> {
-  // 1. Get network event from ML service (DPI simulation)
+
   const netEvent = await analyzeNetwork({
     transaction_frequency: txn.transactionFrequency,
     failed_attempts: txn.failedAttempts,
@@ -210,7 +185,6 @@ export async function computeRisk(txn: ITransaction): Promise<RiskResult> {
     user_id: txn.userId,
   });
 
-  // 2. Build ML feature dict
   const avg = txn.previousTransactionAvg || 0;
   const amountRatio = avg > 0 ? txn.amount / avg : 0;
 
@@ -231,15 +205,12 @@ export async function computeRisk(txn: ITransaction): Promise<RiskResult> {
     packet_count: netEvent.packetCount,
   };
 
-  // 3. Rule-based scorers
   const { score: txnScore, factors: txnFactors, flags: txnFlags } = scoreTransaction(txn, netEvent);
   const { score: behScore, factors: behFactors, flags: behFlags } = scoreBehavioral(txn);
   const { score: netScore, factors: netFactors, flags: netFlags } = scoreNetwork(netEvent);
 
-  // 4. ML inference
   const mlResult = await predict(mlFeatures);
 
-  // 5. Weighted aggregate
   const finalScore = Math.min(100, Math.max(0,
     WEIGHTS.transaction  * txnScore +
     WEIGHTS.behavioral   * behScore +
@@ -250,11 +221,9 @@ export async function computeRisk(txn: ITransaction): Promise<RiskResult> {
 
   const roundedScore = Math.round(finalScore * 100) / 100;
 
-  // 6. Decision
   const decision = makeDecision(roundedScore);
   const confidence = computeConfidence(roundedScore);
 
-  // 7. SHAP values (convert from ShapFactor[] to flat dict)
   let shapValues: Record<string, number> | undefined;
   if (mlResult.shapFactors.length > 0) {
     shapValues = {};

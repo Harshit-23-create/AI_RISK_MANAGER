@@ -38,7 +38,7 @@ export default function SystemHealth() {
       });
       setLastCheck(new Date());
     } catch (e) {
-      // keep current state
+
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function SystemHealth() {
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
           <div className="flex items-center gap-2.5">
@@ -75,7 +75,7 @@ export default function SystemHealth() {
           </div>
           <p className="text-xs text-slate-400 mt-1">Monitor the operational status of all underlying microservices and databases</p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
             Last checked: {lastCheck.toLocaleTimeString()}
@@ -102,7 +102,7 @@ export default function SystemHealth() {
                 <p className="text-xs text-slate-400 font-mono mt-0.5">{s.sub}</p>
               </div>
             </div>
-            
+
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${s.ok ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />

@@ -32,7 +32,6 @@ export async function explainTransaction(req: AuthRequest, res: Response, next: 
       shap_values: ra.shapValues ?? undefined,
     });
 
-    // Persist explanation back to risk assessment
     await RiskAssessment.findByIdAndUpdate(ra._id, { llmExplanation: explanation });
 
     res.json({

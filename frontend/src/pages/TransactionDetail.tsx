@@ -80,7 +80,6 @@ export default function TransactionDetail() {
         <ArrowLeft className="w-4 h-4" /> Back to Transaction Audit List
       </button>
 
-      {/* Header Overview Card */}
       <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6 backdrop-blur-md shadow-xl flex flex-col md:flex-row justify-between gap-6">
         <div className="min-w-0 space-y-2">
           <div className="min-w-0 flex items-center gap-2.5">
@@ -117,7 +116,6 @@ export default function TransactionDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-slate-800 gap-6 px-2 overflow-x-auto">
         {(
           [
@@ -141,7 +139,6 @@ export default function TransactionDetail() {
         ))}
       </div>
 
-      {/* Tab Content */}
       <div className="min-h-[400px]">
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

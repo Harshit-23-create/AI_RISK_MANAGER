@@ -1,7 +1,4 @@
-/**
- * Simulation Service — TypeScript port of Python SimulationService.
- * Preserves all 7 named scenarios and the demo mode cycle.
- */
+
 import { v4 as uuidv4 } from 'uuid';
 import { createTransactionWithRisk, CreateTransactionInput } from './transactionService';
 
@@ -15,7 +12,6 @@ const PAYMENT_METHODS = ['UPI', 'card', 'netbanking', 'wallet'];
 const SUSPICIOUS_IPS = ['185.220.101.50', '198.51.100.44', '203.0.113.99', '45.33.32.156'];
 const DEMO_SCENARIOS = ['demo_normal', 'demo_suspicious', 'demo_api_burst'];
 
-// Per-user behavioral profiles
 const USER_PROFILES: Record<string, { avg: number; min: number; max: number; country: string; age: number; count: number }> = {};
 const USER_KNOWN_DEVICES: Record<string, string> = {};
 const USER_KNOWN_IPS: Record<string, string> = {};
@@ -41,8 +37,6 @@ function randInt(min: number, max: number): number {
 function choice<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
-
-// ── Scenario generators ───────────────────────────────────────────────────────
 
 function generateNormal(): CreateTransactionInput {
   const userId = choice(ALL_USERS);
@@ -179,8 +173,6 @@ function generateHighRisk(): CreateTransactionInput {
   };
 }
 
-// ── Demo scenarios ────────────────────────────────────────────────────────────
-
 function generateDemoNormal(): CreateTransactionInput {
   return {
     transactionId: uuidv4(), userId: 'USER_0001', amount: 1200.00, currency: 'INR', merchantId: '1',
@@ -215,8 +207,6 @@ function generateDemoApiBurst(): CreateTransactionInput {
     isNewDevice: false, isNewIp: true, scenarioLabel: 'demo_api_burst',
   };
 }
-
-// ── SimulationService class ───────────────────────────────────────────────────
 
 export class SimulationService {
   isRunning = false;

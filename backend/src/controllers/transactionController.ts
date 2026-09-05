@@ -28,7 +28,7 @@ const createSchema = z.object({
   isNewDevice: z.boolean().default(false),
   isNewIp: z.boolean().default(false),
   scenarioLabel: z.string().optional(),
-  // snake_case aliases for FastAPI compatibility
+
   failed_attempts: z.number().int().optional(),
   transaction_frequency: z.number().optional(),
   account_age_days: z.number().int().optional(),
@@ -60,7 +60,6 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
     if (req.query.is_new_device !== undefined) filter.isNewDevice = req.query.is_new_device === 'true';
     if (req.query.is_new_ip !== undefined) filter.isNewIp = req.query.is_new_ip === 'true';
 
-    // Amount range
     if (req.query.min_amount || req.query.max_amount) {
       const amountFilter: Record<string, number> = {};
       if (req.query.min_amount) amountFilter.$gte = parseFloat(req.query.min_amount as string);
@@ -68,7 +67,6 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
       filter.amount = amountFilter;
     }
 
-    // Date range
     if (req.query.from_date || req.query.to_date) {
       const tsFilter: Record<string, Date> = {};
       if (req.query.from_date) tsFilter.$gte = new Date(req.query.from_date as string);
@@ -76,7 +74,6 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
       filter.timestamp = tsFilter;
     }
 
-    // Decision filter — requires join with RiskAssessment
     if (req.query.decision) {
       const decision = (req.query.decision as string).toUpperCase();
       const raIds = await RiskAssessment.distinct('transactionId', { decision: decision as any });
@@ -92,7 +89,6 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
     const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
     const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
 
-    // Map to snake_case for frontend compatibility
     const mappedItems = items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id))));
     res.json({ total, page, page_size: pageSize, items: mappedItems });
   } catch (err) { next(err); }
@@ -109,7 +105,7 @@ export async function getTransaction(req: AuthRequest, res: Response, next: Next
 export async function createTransaction(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const raw = createSchema.parse(req.body);
-    // Merge snake_case aliases into camelCase
+
     const input = {
       transactionId: raw.transactionId,
       userId: raw.userId || raw.user_id || '',
@@ -162,7 +158,6 @@ export async function getUserHistory(req: AuthRequest, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
-// Convert camelCase Mongoose doc to snake_case API response matching existing frontend
 function mapTxnToResponse(txn: any, decision?: string) {
   return {
     id: String(txn._id),

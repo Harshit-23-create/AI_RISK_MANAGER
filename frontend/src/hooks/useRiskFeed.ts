@@ -37,7 +37,7 @@ export function useRiskFeed(onEvent: (event: RiskFeedEvent) => void) {
           onEventRef.current(data);
         }
       } catch {
-        // ignore malformed messages
+
       }
     };
 

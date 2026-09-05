@@ -43,7 +43,7 @@ export default function NetworkPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-      {/* Header Banner */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
           <div className="flex items-center gap-2.5">
@@ -63,7 +63,6 @@ export default function NetworkPage() {
         </button>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Total DPI Events"
@@ -99,9 +98,8 @@ export default function NetworkPage() {
         />
       </div>
 
-      {/* Request Rate Chart & Suspicious IP Intelligence Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Request Rate Chart */}
+
         <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl">
           <div className="border-b border-slate-800 pb-3 mb-4">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -124,7 +122,6 @@ export default function NetworkPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Suspicious IP Threat Intelligence list */}
         <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl flex flex-col justify-between">
           <div>
             <div className="border-b border-slate-800 pb-3 mb-3">
@@ -153,7 +150,6 @@ export default function NetworkPage() {
         </div>
       </div>
 
-      {/* Network Packet Table */}
       <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl space-y-4">
         <div className="border-b border-slate-800 pb-3">
           <h2 className="text-sm font-bold text-white">Inspected Layer-7 Packet Stream</h2>
@@ -216,7 +212,6 @@ export default function NetworkPage() {
         </div>
       </div>
 
-      {/* Packet Inspector Drawer Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
           <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">

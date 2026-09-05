@@ -47,7 +47,6 @@ export async function getNetworkStats(req: AuthRequest, res: Response, next: Nex
         .lean(),
     ]);
 
-    // Get unique suspicious IPs
     const suspiciousIps = await NetworkEvent.distinct('srcIp', { isSuspicious: true });
 
     res.json({

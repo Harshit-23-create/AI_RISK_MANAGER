@@ -18,8 +18,6 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
@@ -27,8 +25,7 @@ export default function App() {
         path="/login" 
         element={<Login />} 
       />
-      
-      {/* Protected Routes wrapped in Layout */}
+
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} />

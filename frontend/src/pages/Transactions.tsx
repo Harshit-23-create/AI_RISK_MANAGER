@@ -17,7 +17,6 @@ export default function Transactions() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Filters
   const [decision, setDecision] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [minAmount, setMinAmount] = useState<string>('');
@@ -70,7 +69,7 @@ export default function Transactions() {
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
           <div className="flex items-center gap-2.5">
@@ -83,7 +82,6 @@ export default function Transactions() {
         </div>
       </div>
 
-      {/* Filter Controls Panel */}
       <form onSubmit={handleApplyFilters} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
@@ -100,7 +98,7 @@ export default function Transactions() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          {/* Search Query */}
+
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-slate-400">Search User / Tx ID</label>
             <div className="relative">
@@ -115,7 +113,6 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Decision Filter */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-slate-400">Risk Decision</label>
             <select
@@ -131,7 +128,6 @@ export default function Transactions() {
             </select>
           </div>
 
-          {/* Amount Range */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-slate-400">Amount Min - Max (INR)</label>
             <div className="flex gap-2">
@@ -152,7 +148,6 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Date Range */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-slate-400">Date Bound (From - To)</label>
             <div className="flex gap-2">
@@ -182,9 +177,8 @@ export default function Transactions() {
         </div>
       </form>
 
-      {/* Main Table / Mobile Cards */}
       <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-xl overflow-hidden">
-        {/* Desktop Table View */}
+
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -274,7 +268,6 @@ export default function Transactions() {
           </table>
         </div>
 
-        {/* Mobile Cards View */}
         <div className="md:hidden divide-y divide-slate-800">
           {(data?.items ?? []).map((txn) => (
             <div

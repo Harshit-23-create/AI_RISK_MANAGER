@@ -9,22 +9,16 @@ import { seedAdminUser } from './utils/seed';
 async function start() {
   console.log('Starting AI Risk Manager Node.js backend...');
 
-  // Connect to MongoDB
   await connectDB();
 
-  // Seed admin user if not exists
   await seedAdminUser();
 
-  // Connect to Redis (non-fatal)
   await connectRedis();
 
-  // Create HTTP server
   const server = http.createServer(app);
 
-  // Attach WebSocket server
   wsManager.attach(server);
 
-  // Start listening
   server.listen(config.port, () => {
     console.log(`\n🚀 AI Risk Manager running on http://localhost:${config.port}`);
     console.log(`📊 API docs: http://localhost:${config.port}/health`);
@@ -32,7 +26,6 @@ async function start() {
     console.log(`🌍 Env: ${config.nodeEnv}\n`);
   });
 
-  // Graceful shutdown
   const shutdown = () => {
     console.log('\nShutting down gracefully...');
     server.close(() => process.exit(0));

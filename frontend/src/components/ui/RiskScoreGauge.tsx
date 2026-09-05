@@ -61,7 +61,6 @@ export const RiskScoreGauge: React.FC<RiskScoreGaugeProps> = ({ score, decision,
         )}
       </div>
 
-      {/* Progress track */}
       <div className="relative h-3 w-full rounded-full bg-slate-800/90 overflow-hidden border border-slate-700/60 p-0.5">
         <div
           className={`h-full rounded-full ${color} shadow-lg transition-all duration-700 ease-out`}
@@ -69,7 +68,6 @@ export const RiskScoreGauge: React.FC<RiskScoreGaugeProps> = ({ score, decision,
         />
       </div>
 
-      {/* Risk threshold bands */}
       <div className="mt-2 grid grid-cols-4 gap-1 text-[10px] font-semibold text-slate-400 text-center">
         <div className="text-emerald-400/80">0-30 ALLOW</div>
         <div className="text-amber-400/80">31-60 MONITOR</div>

@@ -1,8 +1,4 @@
-/**
- * LLM Service — generates human-readable explanations of ML decisions.
- * The LLM NEVER determines the risk decision; it only explains the result.
- * Supports: OpenAI, Gemini, Mock (deterministic fallback).
- */
+
 import axios from 'axios';
 import { config } from '../config/env';
 
@@ -76,7 +72,6 @@ function mockExplanation(ctx: LlmContext): string {
     return `Transaction ${ctx.transaction_id} requires step-up authentication due to a risk score of ${risk_score}/100. The key concern is: ${topFactor}. While not conclusive enough to block, the combination of behavioral (${breakdown.behavioral.toFixed(1)}) and network (${breakdown.network.toFixed(1)}) signals warrants additional identity verification before proceeding.`;
   }
 
-  // MONITOR
   return `Transaction ${ctx.transaction_id} is being monitored with a risk score of ${risk_score}/100. ${risk_factors.length > 0 ? `The system detected: ${risk_factors[0]?.description}.` : 'Some minor anomalies were detected.'} The transaction was allowed to proceed but will be tracked for any follow-up suspicious activity.`;
 }
 

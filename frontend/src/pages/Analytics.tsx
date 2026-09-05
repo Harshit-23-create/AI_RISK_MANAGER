@@ -29,7 +29,6 @@ export default function Analytics() {
     fetchStats();
   }, [fetchStats, timeRange]);
 
-  // Generate some mock historical data based on current stats to make the charts look rich
   const mockDailyVolume = Array.from({ length: 7 }).map((_, i) => ({
     date: `Day -${7 - i}`,
     volume: Math.floor(Math.random() * 5000) + 1000,
@@ -46,7 +45,7 @@ export default function Analytics() {
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
           <div className="flex items-center gap-2.5">
@@ -85,10 +84,9 @@ export default function Analytics() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Top Row Charts */}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Risk Score Area Chart (from DB) */}
+
             <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -119,7 +117,6 @@ export default function Analytics() {
               </ResponsiveContainer>
             </div>
 
-            {/* Transaction Volume Bar Chart (Mocked) */}
             <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -146,7 +143,6 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Bottom Chart */}
           <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
             <div className="flex justify-between items-start mb-6">
               <div>

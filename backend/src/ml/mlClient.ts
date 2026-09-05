@@ -1,7 +1,4 @@
-/**
- * ML Client — HTTP interface to Python ML microservice.
- * Falls back to rule-based scoring if the ML service is unavailable.
- */
+
 import axios from 'axios';
 import { config } from '../config/env';
 
@@ -70,8 +67,6 @@ export interface ModelInfo {
   fallback_active: boolean;
 }
 
-// ── Rule-based fallbacks (when ML service is down) ────────────────────────────
-
 function ruleBasedAnomaly(f: MLPredictRequest): number {
   let score = 0;
   if (f.amount_ratio > 5) score += 40;
@@ -125,8 +120,6 @@ function ruleBasedNetwork(req: NetworkRequest): NetworkResponse {
     isSimulated: true,
   };
 }
-
-// ── HTTP calls to Python ML service ──────────────────────────────────────────
 
 const mlClient = axios.create({
   baseURL: config.mlServiceUrl,

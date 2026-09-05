@@ -4,7 +4,6 @@ import type {
   RiskAssessment, AlertListResponse, DashboardStats, NetworkStats, ModelStatus
 } from '../types';
 
-// Node.js backend is on port 3000 (was 8000 for FastAPI)
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const api = axios.create({
@@ -12,7 +11,6 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// Attach JWT token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -21,7 +19,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally
 api.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -34,7 +31,6 @@ api.interceptors.response.use(
   }
 );
 
-// ── Auth ──────────────────────────────────────────────
 export const authApi = {
   login: (data: LoginRequest) =>
     api.post<TokenResponse>('/auth/login', data).then(r => r.data),
@@ -45,7 +41,6 @@ export const authApi = {
   me: () => api.get('/auth/me').then(r => r.data),
 };
 
-// ── Transactions ─────────────────────────────────────
 export const transactionsApi = {
   list: (params?: {
     page?: number;
@@ -73,7 +68,6 @@ export const transactionsApi = {
     api.get<Transaction>(`/transactions/${id}`).then(r => r.data),
 };
 
-// ── Risk ─────────────────────────────────────────────
 export const riskApi = {
   get: (transactionId: string) =>
     api.get<RiskAssessment>(`/risk/${transactionId}`).then(r => r.data),
@@ -83,7 +77,6 @@ export const riskApi = {
     ).then(r => r.data),
 };
 
-// ── Alerts ───────────────────────────────────────────
 export const alertsApi = {
   list: (page = 1, severity?: string, status?: string, unresolvedOnly = false) =>
     api.get<AlertListResponse>('/alerts', {
@@ -97,19 +90,16 @@ export const alertsApi = {
     api.patch(`/alerts/${id}/escalate`).then(r => r.data),
 };
 
-// ── Dashboard ─────────────────────────────────────────
 export const dashboardApi = {
   stats: () => api.get<DashboardStats>('/dashboard/stats').then(r => r.data),
 };
 
-// ── Network ───────────────────────────────────────────
 export const networkApi = {
   events: (page = 1) =>
     api.get('/network/events', { params: { page } }).then(r => r.data),
   stats: () => api.get<NetworkStats>('/network/stats').then(r => r.data),
 };
 
-// ── Simulation ────────────────────────────────────────
 export const simulationApi = {
   start: (rate = 5, suspiciousRatio = 0.25) =>
     api.post('/simulation/start', null, { params: { rate, suspicious_ratio: suspiciousRatio } }).then(r => r.data),
@@ -120,7 +110,6 @@ export const simulationApi = {
     api.post('/simulation/trigger', { scenario }).then(r => r.data),
 };
 
-// ── Models ────────────────────────────────────────────
 export const modelsApi = {
   status: () => api.get<ModelStatus>('/models/status').then(r => r.data),
 };

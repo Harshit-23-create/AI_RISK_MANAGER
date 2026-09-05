@@ -1,7 +1,4 @@
-/**
- * Transaction Service — full pipeline:
- * Create → DPI/Network → Risk Engine → MongoDB → Alert → Redis → WebSocket
- */
+
 import { Transaction, ITransaction } from '../models/Transaction';
 import { NetworkEvent } from '../models/NetworkEvent';
 import { RiskAssessment } from '../models/RiskAssessment';
@@ -38,20 +35,19 @@ export interface CreateTransactionInput {
 }
 
 export async function createTransactionWithRisk(input: CreateTransactionInput): Promise<ITransaction> {
-  // ── 1. Persist transaction ─────────────────────────────────────
+
   const txn = await Transaction.create({
     ...input,
     status: 'pending',
     timestamp: input.timestamp || new Date(),
   });
 
-  // ── 2. Run risk pipeline ───────────────────────────────────────
   let riskResult: RiskResult;
   try {
     riskResult = await computeRisk(txn);
   } catch (err) {
     console.error('[Transaction Service] Risk pipeline failed:', err);
-    // Fallback: MONITOR with medium score
+
     riskResult = {
       transactionScore: 30, behavioralScore: 30, networkScore: 20,
       mlAnomalyScore: 20, mlSupervisedScore: 20, finalScore: 25,
@@ -65,7 +61,6 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
     };
   }
 
-  // ── 3. Persist NetworkEvent ────────────────────────────────────
   const ne = riskResult.networkEvent;
   const netEvent = await NetworkEvent.create({
     transactionId: txn._id,
@@ -89,7 +84,6 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
     isSimulated: true,
   });
 
-  // ── 4. Persist RiskAssessment ──────────────────────────────────
   await RiskAssessment.create({
     transactionId: txn._id,
     transactionUuid: txn.transactionId,
@@ -107,7 +101,6 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
     mlFallback: riskResult.mlFallback,
   });
 
-  // ── 5. Persist ModelPredictions ────────────────────────────────
   await ModelPrediction.create([
     {
       transactionId: txn._id,
@@ -128,17 +121,14 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
     },
   ]);
 
-  // ── 6. Generate Alerts ─────────────────────────────────────────
   const alerts = generateAlerts(txn, riskResult);
   if (alerts.length > 0) {
     await Alert.insertMany(alerts.map(a => ({ ...a, transactionId: txn._id })));
   }
 
-  // ── 7. Update transaction status ───────────────────────────────
   txn.status = 'processed';
   await txn.save();
 
-  // ── 8. Broadcast via Redis Pub/Sub (for WebSocket) ─────────────
   const topFactor = riskResult.riskFactors[0]?.description ?? null;
   const wsPayload = {
     type: 'risk_assessment',
@@ -167,7 +157,7 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
     await redis.publish('risk-events', JSON.stringify(wsPayload));
   } catch (err) {
     console.error('[Transaction Service] Failed to publish to Redis:', err);
-    // Fallback: direct broadcast if Redis fails
+
     wsManager.broadcast(wsPayload);
   }
 

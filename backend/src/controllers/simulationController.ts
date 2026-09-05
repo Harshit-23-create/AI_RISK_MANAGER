@@ -35,7 +35,7 @@ export async function getSimulationStatus(req: AuthRequest, res: Response): Prom
 export async function startDemo(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     simulationService.stop();
-    await new Promise(r => setTimeout(r, 200)); // brief pause for clean restart
+    await new Promise(r => setTimeout(r, 200)); 
     simulationService.setParams(2, 0.0, true);
     simulationService.run().catch(err => console.error('[Demo] run error:', err));
     res.json({ message: 'Demo mode started', rate: 2, scenarios: ['demo_normal', 'demo_suspicious', 'demo_api_burst'] });

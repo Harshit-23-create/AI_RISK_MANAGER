@@ -5,7 +5,7 @@ export const redis = new Redis(config.redisUrl, {
   lazyConnect: true,
   maxRetriesPerRequest: 3,
   retryStrategy(times) {
-    if (times > 3) return null; // stop retrying
+    if (times > 3) return null; 
     return Math.min(times * 200, 2000);
   },
 });
@@ -14,7 +14,7 @@ export const redisSubscriber = new Redis(config.redisUrl, {
   lazyConnect: true,
   maxRetriesPerRequest: 3,
   retryStrategy(times) {
-    if (times > 3) return null; // stop retrying
+    if (times > 3) return null; 
     return Math.min(times * 200, 2000);
   },
 });
@@ -33,14 +33,14 @@ export async function connectRedis(): Promise<void> {
   } catch (err) {
     console.warn('[Redis] Could not connect:', (err as Error).message);
   }
-  
+
   console.log('[Redis Subscriber] Initializing subscriber');
   try {
     if (redisSubscriber.status === 'wait') {
       await redisSubscriber.connect();
     }
     console.log('[Redis Subscriber] Connected');
-    
+
     if (redisSubscriber.status === 'ready' || redisSubscriber.status === 'connect') {
       await redisSubscriber.subscribe('risk-events');
       console.log('[Redis Subscriber] Subscribed to risk-events');

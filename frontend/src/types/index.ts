@@ -1,4 +1,4 @@
-// ── Auth ──────────────────────────────────────────────
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -20,7 +20,6 @@ export interface User {
   is_active: boolean;
 }
 
-// ── Transaction ──────────────────────────────────────
 export interface Transaction {
   id: string;
   transaction_id: string;
@@ -53,7 +52,6 @@ export interface TransactionListResponse {
   items: Transaction[];
 }
 
-// ── Risk ─────────────────────────────────────────────
 export type Decision = 'ALLOW' | 'MONITOR' | 'STEP-UP' | 'BLOCK';
 export type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
@@ -107,7 +105,6 @@ export interface AlertListResponse {
   items: Alert[];
 }
 
-// ── Dashboard ─────────────────────────────────────────
 export interface DashboardStats {
   total_transactions: number;
   average_risk_score: number;
@@ -123,7 +120,6 @@ export interface DashboardStats {
   risk_timeline: Array<{ timestamp: string; risk_score: number; decision: string }>;
 }
 
-// ── WebSocket ─────────────────────────────────────────
 export interface RiskFeedEvent {
   type: 'risk_assessment' | 'ping';
   transaction_id?: string;
@@ -138,7 +134,6 @@ export interface RiskFeedEvent {
   timestamp?: string;
 }
 
-// ── Network ───────────────────────────────────────────
 export interface NetworkEvent {
   id: string;
   transaction_id: string | null;
@@ -171,7 +166,6 @@ export interface NetworkStats {
   request_timeline: Array<{ timestamp: string; request_rate: number; is_suspicious: boolean }>;
 }
 
-// ── Models ────────────────────────────────────────────
 export interface ModelStatus {
   ml_service_healthy: boolean;
   isolation_forest: { loaded: boolean; features: string[] };

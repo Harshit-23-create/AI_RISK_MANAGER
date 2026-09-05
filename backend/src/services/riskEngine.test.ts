@@ -1,8 +1,4 @@
-/**
- * Risk Engine unit tests — pure TypeScript, no DB required.
- */
 
-// Mock the ML client so tests don't need the Python service
 jest.mock('../ml/mlClient', () => ({
   predict: jest.fn().mockResolvedValue({
     anomalyScore: 20, supervisedScore: 20, confidence: 0.8,
@@ -81,7 +77,7 @@ describe('Risk Engine', () => {
   });
 
   test('decision thresholds', async () => {
-    // Verify ALLOW threshold
+
     const allow = await computeRisk(makeTxn());
     expect(allow.decision === 'ALLOW' || allow.decision === 'MONITOR').toBeTruthy();
   });

@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env from project root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const config = {
@@ -22,7 +21,6 @@ export const config = {
   googleApiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '',
   llmProvider: process.env.LLM_PROVIDER || 'mock',
 
-  // Risk thresholds
   riskAllow: parseInt(process.env.RISK_THRESHOLD_ALLOW || '30', 10),
   riskMonitor: parseInt(process.env.RISK_THRESHOLD_MONITOR || '60', 10),
   riskStepup: parseInt(process.env.RISK_THRESHOLD_STEPUP || '80', 10),

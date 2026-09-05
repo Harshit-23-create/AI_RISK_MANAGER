@@ -24,7 +24,7 @@ export default function Simulation() {
       const data = await simulationApi.status();
       setStatus(data);
     } catch (e) {
-      // ignore
+
     }
   };
 
@@ -87,7 +87,6 @@ export default function Simulation() {
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6 max-w-4xl mx-auto">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
         <div>
           <div className="flex items-center gap-2.5">
@@ -101,9 +100,9 @@ export default function Simulation() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Col: Stream Controls */}
+
         <div className="space-y-6">
-          {/* Status Panel */}
+
           <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg space-y-4">
             <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
               <Terminal className="w-4 h-4 text-cyan-400" /> Engine Status
@@ -151,7 +150,6 @@ export default function Simulation() {
             </div>
           </div>
 
-          {/* Automated Stream Profiles */}
           <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg space-y-4">
             <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
               <Activity className="w-4 h-4 text-cyan-400" /> Automated Continuous Traffic
@@ -184,7 +182,6 @@ export default function Simulation() {
           </div>
         </div>
 
-        {/* Right Col: Specific Injection */}
         <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg h-fit space-y-4">
           <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
             <ShieldAlert className="w-4 h-4 text-amber-400" /> Inject Single Attack Vector
@@ -192,7 +189,7 @@ export default function Simulation() {
           <p className="text-xs text-slate-400 leading-relaxed mb-4">
             Manually trigger specific fraud scenarios into the data stream. These events will be instantly routed through the Risk Engine, evaluated by ML models, and appear on the Dashboard feed.
           </p>
-          
+
           <div className="space-y-3">
             {scenarios.map((s) => (
               <label 

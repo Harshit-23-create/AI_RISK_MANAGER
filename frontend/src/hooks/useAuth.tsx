@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   }, []);
 
-  // Sync state if localStorage changes from another tab
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user') {

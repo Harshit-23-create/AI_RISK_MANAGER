@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import {
   ShieldCheck, Activity, Server, Shield, BrainCircuit, ArrowRight, Network,
   CheckCircle2, Zap, LockKeyhole
@@ -43,10 +42,9 @@ const weights = [
 ];
 
 export default function Landing() {
-  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-[100dvh] min-w-0 overflow-x-hidden bg-slate-950 text-slate-200">
-      {/* Navigation */}
+
       <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
@@ -76,7 +74,7 @@ export default function Landing() {
       </nav>
 
       <main>
-        {/* Hero */}
+
         <section className="relative overflow-hidden border-b border-slate-800/60">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(circle_at_50%_0%,rgba(6,182,212,.16),transparent_60%)]" />
           <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-16 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pb-28 lg:pt-24">
@@ -112,7 +110,7 @@ export default function Landing() {
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] transition-transform duration-500 group-hover:translate-x-[100%]" />
                 </Link>
-                
+
                 <Link
                   to="/login"
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-8 text-sm font-bold text-white transition hover:bg-slate-800 sm:w-auto sm:text-base"
@@ -139,7 +137,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Capabilities */}
         <section className="border-b border-slate-800/60 bg-slate-900/20">
           <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
             <div className="mb-8 max-w-2xl sm:mb-10">
@@ -174,7 +171,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Pipeline */}
         <section className="border-b border-slate-800/60">
           <div className="mx-auto w-full max-w-5xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
             <p className="text-[10px] font-bold font-mono uppercase tracking-[.2em] text-cyan-400">
@@ -250,7 +246,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Explainable engine */}
         <section className="bg-slate-900/20">
           <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
             <div className="grid min-w-0 items-center gap-8 lg:grid-cols-2 lg:gap-14">
@@ -336,7 +331,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* CTA */}
         <section className="border-t border-slate-800/60">
           <div className="mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8">
             <h2 className="text-2xl font-black text-white sm:text-3xl">

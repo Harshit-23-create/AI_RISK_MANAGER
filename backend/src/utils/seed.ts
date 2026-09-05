@@ -1,6 +1,4 @@
-/**
- * Seed utility — creates the default admin user on first startup.
- */
+
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User';
 
