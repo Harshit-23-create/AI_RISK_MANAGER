@@ -24,4 +24,18 @@ export const config = {
   riskAllow: parseInt(process.env.RISK_THRESHOLD_ALLOW || '30', 10),
   riskMonitor: parseInt(process.env.RISK_THRESHOLD_MONITOR || '60', 10),
   riskStepup: parseInt(process.env.RISK_THRESHOLD_STEPUP || '80', 10),
+
+  // ── Simulation control ───────────────────────────────────────
+  // SIMULATION_ENABLED=false means NO automatic data generation at startup.
+  simulationEnabled: process.env.SIMULATION_ENABLED === 'true',
+  simulationIntervalMs: parseInt(process.env.SIMULATION_INTERVAL_MS || '5000', 10),
+  maxSimulatedTransactions: parseInt(process.env.MAX_SIMULATED_TRANSACTIONS || '100', 10),
+
+  // ── Data retention limits ────────────────────────────────────
+  // When a simulation writes past these limits, oldest simulated records are pruned.
+  maxTransactionRecords: parseInt(process.env.MAX_TRANSACTION_RECORDS || '10000', 10),
+  maxNetworkEventRecords: parseInt(process.env.MAX_NETWORK_EVENT_RECORDS || '10000', 10),
+  maxAlertRecords: parseInt(process.env.MAX_ALERT_RECORDS || '5000', 10),
+  maxModelPredictionRecords: parseInt(process.env.MAX_MODEL_PREDICTION_RECORDS || '20000', 10),
+  maxRiskAssessmentRecords: parseInt(process.env.MAX_RISK_ASSESSMENT_RECORDS || '10000', 10),
 };

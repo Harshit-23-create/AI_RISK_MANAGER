@@ -5,11 +5,12 @@ import { startSimulation, stopSimulation, getSimulationStatus, startDemo, trigge
 const router = Router();
 router.use(authenticate);
 
-router.post('/start', startSimulation);
-router.post('/stop', stopSimulation);
-router.get('/status', getSimulationStatus);
-router.post('/demo', startDemo);
-router.post('/scenario', triggerScenario);
+router.post('/start',    startSimulation);
+router.post('/stop',     stopSimulation);
+router.get('/status',    getSimulationStatus);
+router.post('/demo',     startDemo);
+router.post('/scenario', triggerScenario);  // legacy
+router.post('/trigger',  triggerScenario);  // frontend uses /trigger
 router.get('/scenarios', listScenarios);
 
 export default router;

@@ -19,6 +19,7 @@ import networkRoutes from './routes/network';
 import simulationRoutes from './routes/simulation';
 import explainRoutes from './routes/explain';
 import modelsRoutes from './routes/models';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -90,6 +91,7 @@ app.use('/api/network',     networkRoutes);
 app.use('/api/simulation',  simulationRoutes);
 app.use('/api/explain',     explainRoutes);
 app.use('/api/models',      modelsRoutes);
+app.use('/api/admin',       adminRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({

@@ -1,6 +1,24 @@
+/**
+ * simulationService.ts
+ *
+ * Controls all synthetic transaction generation.
+ *
+ * Key rules:
+ *  - Simulation is OFF by default (SIMULATION_ENABLED must be 'true' to auto-start).
+ *  - One global singleton — no duplicate workers.
+ *  - Respects MAX_SIMULATED_TRANSACTIONS cap: stops when reached (not deleted, just stops).
+ *  - Applies data-retention cleanup for ALL 5 simulation-related collections once per cleanup cycle.
+ *  - Logs every meaningful state change with [SIMULATION] prefix for easy diagnosis.
+ */
 
 import { v4 as uuidv4 } from 'uuid';
 import { createTransactionWithRisk, CreateTransactionInput } from './transactionService';
+import { config } from '../config/env';
+import { Transaction } from '../models/Transaction';
+import { NetworkEvent } from '../models/NetworkEvent';
+import { Alert } from '../models/Alert';
+import { ModelPrediction } from '../models/ModelPrediction';
+import { RiskAssessment } from '../models/RiskAssessment';
 
 export const NAMED_SCENARIOS = [
   'normal_payment', 'unusual_amount', 'new_device', 'suspicious_ip',
@@ -208,6 +226,62 @@ function generateDemoApiBurst(): CreateTransactionInput {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Data retention cleanup
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Prune old simulation records from a collection so it stays under `maxDocs`.
+ * Only deletes documents that have scenarioLabel set (simulation-generated),
+ * or uses isSimulated flag for NetworkEvent/ModelPrediction/RiskAssessment.
+ * NEVER touches users collection.
+ */
+async function pruneCollection(
+  model: any,
+  maxDocs: number,
+  filter: Record<string, unknown>,
+  label: string,
+): Promise<void> {
+  try {
+    const total = await model.countDocuments(filter);
+    if (total <= maxDocs) return;
+
+    const excess = total - maxDocs;
+    // Find oldest records to delete
+    const oldest = await model
+      .find(filter, { _id: 1 })
+      .sort({ createdAt: 1, timestamp: 1 })
+      .limit(excess)
+      .lean();
+
+    if (oldest.length === 0) return;
+    const ids = oldest.map((d: any) => d._id);
+    const result = await model.deleteMany({ _id: { $in: ids } });
+    console.log(`[SIMULATION] Cleanup removed ${result.deletedCount} old records from ${label}`);
+  } catch (err) {
+    console.error(`[SIMULATION] Cleanup error on ${label}:`, (err as Error).message);
+  }
+}
+
+async function runCleanup(): Promise<void> {
+  const maxTx   = config.maxTransactionRecords;
+  const maxNet  = config.maxNetworkEventRecords;
+  const maxAlt  = config.maxAlertRecords;
+  const maxPred = config.maxModelPredictionRecords;
+  const maxRisk = config.maxRiskAssessmentRecords;
+
+  // Only prune simulated (scenarioLabel-tagged) transactions — never real ones.
+  await pruneCollection(Transaction, maxTx, { scenarioLabel: { $exists: true, $ne: null } }, 'transactions');
+  await pruneCollection(NetworkEvent, maxNet, { isSimulated: true }, 'networkevents');
+  await pruneCollection(Alert, maxAlt, {}, 'alerts'); // alerts are always from simulation in this app
+  await pruneCollection(ModelPrediction, maxPred, {}, 'modelpredictions');
+  await pruneCollection(RiskAssessment, maxRisk, {}, 'riskassessments');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SimulationService
+// ─────────────────────────────────────────────────────────────────────────────
+
 export class SimulationService {
   isRunning = false;
   rate = 2;
@@ -219,6 +293,8 @@ export class SimulationService {
   startedAt: Date | null = null;
   private stopSignal = false;
   private demoIndex = 0;
+  private cleanupCounter = 0;
+  private readonly CLEANUP_EVERY = 50; // run cleanup every N events
 
   setParams(rate: number, suspiciousRatio: number, demoMode = false) {
     this.rate = Math.min(50, Math.max(1, rate));
@@ -229,11 +305,13 @@ export class SimulationService {
   stop() {
     this.stopSignal = true;
     this.isRunning = false;
+    console.log('[SIMULATION] Stop signal sent.');
   }
 
   getStatus() {
     const elapsed = this.startedAt ? (Date.now() - this.startedAt.getTime()) / 1000 : null;
     return {
+      enabled: config.simulationEnabled,
       running: this.isRunning,
       rate: this.rate,
       suspicious_ratio: this.suspiciousRatio,
@@ -241,6 +319,7 @@ export class SimulationService {
       events_generated: this.eventsGenerated,
       normal_events: this.normalEvents,
       suspicious_events: this.suspiciousEvents,
+      max_records: config.maxSimulatedTransactions,
       events_per_second: elapsed && elapsed > 0 ? Math.round(this.eventsGenerated / elapsed * 100) / 100 : 0,
       elapsed_seconds: elapsed ? Math.round(elapsed * 10) / 10 : null,
       started_at: this.startedAt?.toISOString() ?? null,
@@ -270,17 +349,40 @@ export class SimulationService {
   }
 
   async run() {
+    if (this.isRunning) {
+      console.log('[SIMULATION] Already running — ignoring duplicate start request.');
+      return;
+    }
+
     this.stopSignal = false;
     this.isRunning = true;
     this.startedAt = new Date();
     this.eventsGenerated = 0;
     this.normalEvents = 0;
     this.suspiciousEvents = 0;
+    this.cleanupCounter = 0;
+
+    const maxEvents = config.maxSimulatedTransactions;
+    // Use SIMULATION_INTERVAL_MS when set, otherwise derive from rate (events/sec).
+    // rate is events per second; interval = 1000ms / rate.
+    const interval = config.simulationIntervalMs > 0
+      ? config.simulationIntervalMs
+      : Math.max(100, Math.round(1000 / this.rate));
+
+    console.log('[SIMULATION] Enabled');
+    console.log(`[SIMULATION] Interval: ${interval}ms`);
+    console.log(`[SIMULATION] Max records: ${maxEvents}`);
+    console.log(`[SIMULATION] Rate: ${this.rate} events/sec | Demo: ${this.demoMode}`);
 
     const SUSPICIOUS_SCENARIOS = ['unusual_amount', 'multiple_failed_attempts', 'new_device', 'suspicious_ip', 'api_burst'];
-    const interval = 1000 / this.rate;
 
     while (!this.stopSignal) {
+      // Stop if we've hit the max records limit
+      if (maxEvents > 0 && this.eventsGenerated >= maxEvents) {
+        console.log(`[SIMULATION] Max records limit (${maxEvents}) reached — stopping automatically.`);
+        break;
+      }
+
       try {
         let payload: CreateTransactionInput;
         let isSuspicious = false;
@@ -298,18 +400,44 @@ export class SimulationService {
         if (isSuspicious) this.suspiciousEvents++;
         else this.normalEvents++;
 
-        await createTransactionWithRisk(payload);
+        const txn = await createTransactionWithRisk(payload);
         this.eventsGenerated++;
+
+        console.log(`[SIMULATION] Transaction generated: ${txn.transactionId} (total: ${this.eventsGenerated})`);
+
+        // Periodic cleanup to keep database size bounded
+        this.cleanupCounter++;
+        if (this.cleanupCounter >= this.CLEANUP_EVERY) {
+          this.cleanupCounter = 0;
+          // Fire-and-forget cleanup (non-blocking)
+          runCleanup().catch(err => console.error('[SIMULATION] Cleanup failed:', err));
+        }
       } catch (err) {
-        console.error('[Simulation] Event error:', (err as Error).message);
+        console.error('[SIMULATION] Event error:', (err as Error).message);
       }
 
       await new Promise(resolve => setTimeout(resolve, interval));
     }
 
     this.isRunning = false;
-    console.log(`[Simulation] Stopped. Generated ${this.eventsGenerated} events.`);
+    console.log(`[SIMULATION] Stopped. Generated ${this.eventsGenerated} events.`);
+    // Run final cleanup on stop
+    runCleanup().catch(err => console.error('[SIMULATION] Final cleanup error:', err));
   }
 }
 
 export const simulationService = new SimulationService();
+
+/**
+ * Auto-start simulation on backend startup ONLY if SIMULATION_ENABLED=true.
+ * Called from server.ts after all connections are ready.
+ */
+export function maybeAutoStartSimulation(): void {
+  if (config.simulationEnabled) {
+    console.log('[SIMULATION] SIMULATION_ENABLED=true — auto-starting simulation...');
+    simulationService.setParams(2, 0.25, false);
+    simulationService.run().catch(err => console.error('[SIMULATION] Auto-start error:', err));
+  } else {
+    console.log('[SIMULATION] Disabled (SIMULATION_ENABLED is not "true"). No automatic data generation.');
+  }
+}
