@@ -9,11 +9,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Activity, RefreshCw, Database, Server, Cpu, Globe,
-  CheckCircle2, AlertTriangle, Clock, Zap, BarChart3,
+  Clock, Zap, BarChart3,
   ShieldCheck, Brain
 } from 'lucide-react';
 import api, { modelsApi } from '../services/api';
 import { useRiskFeed } from '../hooks/useRiskFeed';
+import type { ModelStatus } from '../types';
 
 interface ServiceStatus {
   id: string;
@@ -112,15 +113,14 @@ export default function SystemHealth() {
     setLoading(true);
 
     // Probe each service individually with latency measurement
-    const [backendProbe, mlProbe, adminProbe] = await Promise.all([
+    const [backendProbe, mlProbe] = await Promise.all([
       pingService(() => api.get('/health')),
       pingService(() => modelsApi.status()),
-      pingService(() => api.get('/admin/database-stats')),
     ]);
 
     const healthData = await api.get('/health').then(r => r.data).catch(() => null);
     const adminData = await api.get('/admin/database-stats').then(r => r.data).catch(() => null);
-    const modelData = await modelsApi.status().catch(() => null);
+    const modelData: ModelStatus | null = await modelsApi.status().catch(() => null);
 
     const mongoOk = healthData?.mongodb ?? false;
     const redisOk = healthData?.redis ?? false;
@@ -170,7 +170,12 @@ export default function SystemHealth() {
       },
     ]);
 
-    if (modelData) setModelInfo(modelData.ml_model_info ?? null);
+    // ModelStatus fields are at the top level (isolation_forest, xgboost, fallback_active)
+    if (modelData) setModelInfo({
+      isolation_forest: modelData.isolation_forest,
+      xgboost: modelData.xgboost,
+      fallback_active: modelData.fallback_active,
+    });
     if (adminData) setDbStats(adminData);
     setLastCheck(new Date());
     setLoading(false);

@@ -1,3 +1,11 @@
+/**
+ * dashboardController.ts
+ *
+ * Computes high-level security operations center (SOC) metrics via MongoDB
+ * aggregation pipelines: transaction volumes, decision breakdowns (allow, monitor,
+ * step-up, block), average risk scores, active alert tallies, and risk timeline points.
+ */
+
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Transaction } from '../models/Transaction';

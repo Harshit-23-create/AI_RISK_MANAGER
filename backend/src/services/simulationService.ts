@@ -11,7 +11,8 @@
  *  - Logs every meaningful state change with [SIMULATION] prefix for easy diagnosis.
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
+const uuidv4 = randomUUID;
 import { createTransactionWithRisk, CreateTransactionInput } from './transactionService';
 import { config } from '../config/env';
 import { Transaction } from '../models/Transaction';

@@ -1,3 +1,11 @@
+/**
+ * transactionController.ts
+ *
+ * Handles HTTP endpoints for transaction ingestion, listing, filtering,
+ * and detailed risk inspection. Delegates scoring and real-time broadcast
+ * to transactionService and wsManager.
+ */
+
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Transaction } from '../models/Transaction';

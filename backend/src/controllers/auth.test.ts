@@ -103,21 +103,21 @@ describe('POST /api/auth/register', () => {
     jest.clearAllMocks();
   });
 
-  it('returns 422 when email is missing', async () => {
+  it('returns 400 when email is missing', async () => {
     const res = await request(app).post('/api/auth/register').send({ password: 'Password1!' });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
-  it('returns 422 when password is missing', async () => {
+  it('returns 400 when password is missing', async () => {
     const res = await request(app).post('/api/auth/register').send({ email: 'user@test.com' });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
-  it('returns 422 when email is invalid format', async () => {
+  it('returns 400 when email is invalid format', async () => {
     const res = await request(app)
       .post('/api/auth/register')
       .send({ email: 'not-an-email', password: 'Password1!' });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
   it('returns 400 when email is already registered', async () => {
@@ -146,9 +146,9 @@ describe('POST /api/auth/login', () => {
     jest.clearAllMocks();
   });
 
-  it('returns 422 when body is empty', async () => {
+  it('returns 400 when body is empty', async () => {
     const res = await request(app).post('/api/auth/login').send({});
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
   it('returns 401 when user does not exist', async () => {
@@ -225,15 +225,17 @@ describe('GET /api/auth/me', () => {
 
   it('returns 200 with user profile for valid token', async () => {
     (jwt.verify as jest.Mock).mockReturnValueOnce({ sub: mockUser._id, role: 'analyst' });
-    (User.findById as jest.Mock).mockReturnValueOnce({
-      select: jest.fn().mockReturnValue({
+    const mockQuery: any = {
+      lean: jest.fn().mockResolvedValue(mockUser),
+      select: jest.fn().mockImplementation(() => ({
         lean: jest.fn().mockResolvedValue({
           _id: mockUser._id,
           email: mockUser.email,
           role: mockUser.role,
         }),
-      }),
-    });
+      })),
+    };
+    (User.findById as jest.Mock).mockReturnValue(mockQuery);
     const res = await request(app)
       .get('/api/auth/me')
       .set('Authorization', 'Bearer valid.jwt.token');

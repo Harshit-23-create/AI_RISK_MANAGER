@@ -1,0 +1,43 @@
+services:
+  # ── Node.js + Express Backend Service ───────────────────────────────────────
+  - type: web
+    name: ai-risk-manager-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: ai-risk-manager-ml
+          property: host
+
+  # ── Python FastAPI ML Service ───────────────────────────────────────────────
+  - type: web
+    name: ai-risk-manager-ml
+    runtime: python
+    plan: free
+    rootDir: ml-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PORT
+        value: 8000
+      - key: BACKEND_ORIGIN
+        sync: false
