@@ -5,6 +5,16 @@ import { RiskAssessment } from '../models/RiskAssessment';
 import { ModelPrediction } from '../models/ModelPrediction';
 import { HttpError } from '../middleware/errorHandler';
 
+/**
+ * GET /api/risk/:transaction_id
+ *
+ * Returns the full risk assessment for a transaction, including all five
+ * component scores, SHAP feature attributions, LLM explanation narrative,
+ * and rule flags. The `transaction_id` param is the UUID (not the MongoDB _id).
+ *
+ * Response includes `ml_fallback: true` when trained models weren't available
+ * and rule-based scoring was used instead.
+ */
 export async function getRiskAssessment(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const txn = await Transaction.findOne({ transactionId: req.params.transaction_id }).lean();
@@ -42,6 +52,13 @@ export async function getRiskAssessment(req: AuthRequest, res: Response, next: N
   } catch (err) { next(err); }
 }
 
+/**
+ * GET /api/risk/:transaction_id/summary
+ *
+ * Returns a compact risk summary — useful for list views and alert cards
+ * where the full SHAP payload would be too heavy. Includes the top-ranked
+ * risk factor description for quick analyst triage.
+ */
 export async function getRiskSummary(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const txn = await Transaction.findOne({ transactionId: req.params.transaction_id }).lean();
@@ -71,6 +88,13 @@ export async function getRiskSummary(req: AuthRequest, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+/**
+ * GET /api/risk/:transaction_id/predictions
+ *
+ * Returns raw model prediction records for a transaction, one per ML model
+ * that ran (Isolation Forest + XGBoost). Used by the TransactionDetail page
+ * to show individual model contributions separate from the aggregated score.
+ */
 export async function getModelPredictions(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const txn = await Transaction.findOne({ transactionId: req.params.transaction_id }).lean();

@@ -1,0 +1,120 @@
+version: '3.9'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Risk Manager — Optional Docker Compose Dev Environment
+#
+# This compose file starts the infrastructure services (Redis + MongoDB) so you
+# can run the Node.js backend and Python ML service natively without needing to
+# install Redis or MongoDB locally.
+#
+# Usage:
+#   docker compose up -d          # Start Redis + MongoDB only
+#   docker compose up -d --build  # Full stack (builds backend + ml + frontend)
+#   docker compose down           # Stop all services
+#   docker compose logs -f        # Follow logs
+#
+# Quick Start (infrastructure only):
+#   docker compose up -d redis mongodb
+#   cd backend && npm run dev
+#   cd ml-service && uvicorn main:app --reload --port 8001
+#   cd frontend && npm run dev
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ai-risk-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── MongoDB ────────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: ai-risk-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ai_risk_manager
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Python ML Service ──────────────────────────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile.ml
+    container_name: ai-risk-ml
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: "8001"
+      BACKEND_ORIGIN: "http://backend:3000"
+    volumes:
+      - ./ml/models:/app/models:ro
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Node.js Backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: ai-risk-backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      MONGODB_URI: "mongodb://mongodb:27017/ai_risk_manager"
+      REDIS_URL: "redis://redis:6379"
+      ML_SERVICE_URL: "http://ml-service:8001"
+      FRONTEND_URL: "http://localhost:5173"
+      JWT_SECRET: "change-me-in-production-use-a-strong-secret"
+      JWT_EXPIRES_IN: "7d"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── React Frontend ─────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: ai-risk-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  mongo_data:

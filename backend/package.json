@@ -10,9 +10,9 @@
     "test": "jest --passWithNoTests",
     "test:coverage": "jest --coverage"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["fintech", "fraud-detection", "machine-learning", "real-time", "risk-management", "websocket", "xgboost", "shap"],
+  "author": "Harshit <harshitjagessar23@gmail.com> (https://github.com/Harshit-23-create)",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/supertest": "^7.2.1",

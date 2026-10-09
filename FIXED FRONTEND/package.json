@@ -1,11 +1,7 @@
 {
-  "name": "ai-risk-manager-frontend",
-  "description": "AI Risk Manager — React + TypeScript real-time payment fraud detection dashboard",
+  "name": "frontend",
   "private": true,
-  "version": "2.0.0",
-  "author": "Harshit <harshitjagessar23@gmail.com> (https://github.com/Harshit-23-create)",
-  "license": "MIT",
-  "keywords": ["fintech", "fraud-detection", "react", "typescript", "vite", "real-time"],
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -44,7 +44,7 @@ const weights = [
 export default function Landing() {
   return (
     <div className="min-h-[100dvh] min-w-0 overflow-x-hidden bg-slate-950 text-slate-200">
-
+      {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
@@ -74,7 +74,7 @@ export default function Landing() {
       </nav>
 
       <main>
-
+        {/* Hero */}
         <section className="relative overflow-hidden border-b border-slate-800/60">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(circle_at_50%_0%,rgba(6,182,212,.16),transparent_60%)]" />
           <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-16 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pb-28 lg:pt-24">
@@ -100,20 +100,17 @@ export default function Landing() {
                 operations center for modern fintech teams.
               </p>
 
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:justify-center">
                 <Link
                   to="/login"
-                  className="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-cyan-500 px-8 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-400 sm:w-auto sm:text-base"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-cyan-500/15 transition hover:bg-cyan-400 sm:w-auto"
                 >
-                  <span className="relative z-10 flex items-center gap-2">
-                    Launch Risk Console <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] transition-transform duration-500 group-hover:translate-x-[100%]" />
+                  Launch Risk Console
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-
                 <Link
                   to="/login"
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-8 text-sm font-bold text-white transition hover:bg-slate-800 sm:w-auto sm:text-base"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800 sm:w-auto"
                 >
                   Explore Demo Mode
                 </Link>
@@ -137,6 +134,7 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Capabilities */}
         <section className="border-b border-slate-800/60 bg-slate-900/20">
           <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
             <div className="mb-8 max-w-2xl sm:mb-10">
@@ -171,6 +169,7 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Pipeline */}
         <section className="border-b border-slate-800/60">
           <div className="mx-auto w-full max-w-5xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
             <p className="text-[10px] font-bold font-mono uppercase tracking-[.2em] text-cyan-400">
@@ -246,6 +245,7 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Explainable engine */}
         <section className="bg-slate-900/20">
           <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
             <div className="grid min-w-0 items-center gap-8 lg:grid-cols-2 lg:gap-14">
@@ -331,6 +331,7 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* CTA */}
         <section className="border-t border-slate-800/60">
           <div className="mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8">
             <h2 className="text-2xl font-black text-white sm:text-3xl">
@@ -353,35 +354,16 @@ export default function Landing() {
 
       <footer className="border-t border-slate-800 bg-slate-950">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-7 text-center text-[10px] text-slate-500 sm:px-6 sm:text-xs lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:text-left">
-          <div className="flex flex-col items-center gap-1 lg:items-start">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-cyan-500" />
-              <span className="font-bold text-slate-300">AI Risk Manager</span>
-              <span>— Payment Security SOC</span>
-            </div>
-            <span className="text-[9px] text-slate-600">
-              © {new Date().getFullYear()} Harshit. All rights reserved. Licensed under MIT.
-            </span>
+          <div className="flex items-center justify-center gap-2 lg:justify-start">
+            <ShieldCheck className="h-4 w-4 text-cyan-500" />
+            <span className="font-bold text-slate-300">AI Risk Manager</span>
+            <span>— Payment Security SOC</span>
           </div>
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-end">
-            <Link to="/" className="transition-colors hover:text-white">Product</Link>
-            <Link to="/login" className="transition-colors hover:text-white">Console</Link>
-            <a
-              href="http://localhost:3000/api-docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-white"
-            >
-              API Docs
-            </a>
-            <a
-              href="https://github.com/Harshit-23-create/AI_RISK_MANAGER"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-white"
-            >
-              GitHub
-            </a>
+            <span>Product</span>
+            <span>Security</span>
+            <span>Documentation</span>
+            <span>GitHub</span>
           </div>
         </div>
       </footer>

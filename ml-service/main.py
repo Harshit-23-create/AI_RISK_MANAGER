@@ -30,9 +30,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# ML Service accepts requests ONLY from the Node.js backend.
+# Set BACKEND_ORIGIN in the ml-service .env to match your backend URL.
+_allowed_origins = [
+    os.environ.get("BACKEND_ORIGIN", "http://localhost:3000"),
+    "http://localhost:3001",  # allow dev variants
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )

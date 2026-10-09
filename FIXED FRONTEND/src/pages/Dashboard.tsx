@@ -27,18 +27,6 @@ const DECISION_COLORS: Record<string, string> = {
 
 const MAX_FEED_ROWS = 50;
 
-/**
- * Dashboard — Real-time SOC (Security Operations Center).
- *
- * Architecture notes:
- * - `pendingEvents` is a ref (not state) to buffer incoming WebSocket events
- *   without triggering React re-renders on every tick.
- * - The flush interval (10s) drains `pendingEvents` into `feed` state in a
- *   single batch, keeping UI smooth under high event throughput.
- * - Stats poll every 10s independently of the WS feed so KPI cards stay fresh
- *   even if the WebSocket reconnects.
- * - Toast notifications fire for any transaction scoring ≥75 (HIGH / BLOCK).
- */
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -71,14 +59,13 @@ export default function Dashboard() {
       setStats(statsData);
       setRecentAlerts(alertsData);
     } catch (e) {
-      console.error('[Dashboard] Failed to fetch stats:', e);
-      addToast('error', 'Refresh Failed', 'Could not load dashboard stats. Check your connection.');
+      console.error(e);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -92,7 +79,7 @@ export default function Dashboard() {
         setTimeout(() => setNewRowIds(new Set()), 3000);
         setFeed(prev => [...incoming, ...prev].slice(0, MAX_FEED_ROWS));
       }
-    }, 10000);
+    }, 1500);
     return () => clearInterval(flush);
   }, [isFeedPaused]);
 
@@ -140,6 +127,7 @@ export default function Dashboard() {
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
+      {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Risk Operations Center</h1>
@@ -167,6 +155,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── 6 KPIs ───────────────────────────────── */}
       <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           title="Total Processed"
@@ -218,8 +207,9 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* ── Charts Row ──────────────────────────────────────────────── */}
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
-
+        {/* Risk Timeline */}
         <div className="min-w-0 lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-lg">
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 mb-4">
             <div>
@@ -260,13 +250,14 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
+        {/* Decision Donut */}
         <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-lg backdrop-blur-md sm:p-5 flex flex-col">
           <div className="mb-2">
             <h2 className="text-sm font-bold text-white">Decision Distribution</h2>
             <p className="text-[11px] text-slate-400">ALLOW / MONITOR / STEP-UP / BLOCK</p>
           </div>
           <div className="flex-1">
-            <ResponsiveContainer width="100%" height={200} minWidth={0}>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -292,10 +283,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Live Risk Feed & Alerts ──────────────────────────────────────────── */}
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
-
+        {/* Live Risk Feed Table */}
         <div className="min-w-0 lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-lg flex flex-col">
-
+          {/* Feed Header */}
           <div className="flex min-w-0 flex-col gap-3 border-b border-slate-800 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
@@ -411,8 +403,9 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Right Panel: Recent Alerts & Risk Factor */}
         <div className="min-w-0 space-y-4 flex flex-col h-full">
-
+          {/* Recent Alerts */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-lg flex-1">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -420,7 +413,7 @@ export default function Dashboard() {
                 <h3 className="text-sm font-bold text-white">Recent Critical Alerts</h3>
               </div>
             </div>
-
+            
             <div className="space-y-2 mb-4">
               {recentAlerts?.items.length === 0 ? (
                 <div className="text-center py-6 text-slate-500 text-xs border border-slate-800 border-dashed rounded-xl">
@@ -443,6 +436,7 @@ export default function Dashboard() {
             </button>
           </div>
 
+          {/* Risk Factor Summary */}
           <RiskFactorBreakdown />
         </div>
       </div>
