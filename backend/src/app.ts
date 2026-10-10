@@ -97,12 +97,72 @@ app.use('/api/explain',     explainRoutes);
 app.use('/api/models',      modelsRoutes);
 app.use('/api/admin',       adminRoutes);
 
+import { checkMlHealthWithLatency } from './ml/mlClient';
+
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'backend',
     mongodb: mongoose.connection.readyState === 1,
     redis: redis.status === 'ready',
+  });
+});
+
+app.get('/api/health/detailed', async (_req, res) => {
+  const t0 = Date.now();
+  let mongoOk = false;
+  let mongoLatency: number | null = null;
+  if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+    try {
+      const mt0 = Date.now();
+      await mongoose.connection.db.admin().ping();
+      mongoLatency = Date.now() - mt0;
+      mongoOk = true;
+    } catch {
+      mongoOk = false;
+    }
+  }
+
+  let redisOk = false;
+  let redisLatency: number | null = null;
+  if (redis.status === 'ready') {
+    try {
+      const rt0 = Date.now();
+      await redis.ping();
+      redisLatency = Date.now() - rt0;
+      redisOk = true;
+    } catch {
+      redisOk = false;
+    }
+  }
+
+  const mlCheck = await checkMlHealthWithLatency();
+
+  res.json({
+    status: mongoOk ? 'ok' : 'degraded',
+    service: 'ai-risk-manager-backend',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    uptime_seconds: Math.floor(process.uptime()),
+    components: {
+      backend: { status: 'HEALTHY', latency_ms: Math.max(1, Date.now() - t0) },
+      mongodb: {
+        status: mongoOk ? 'HEALTHY' : 'UNAVAILABLE',
+        connected: mongoOk,
+        latency_ms: mongoLatency,
+      },
+      redis: {
+        status: redisOk ? 'HEALTHY' : 'DEGRADED',
+        connected: redisOk,
+        latency_ms: redisLatency,
+      },
+      ml_service: {
+        status: mlCheck.ok ? 'HEALTHY' : 'DEGRADED',
+        connected: mlCheck.ok,
+        latency_ms: mlCheck.latencyMs,
+        models: mlCheck.models ?? null,
+      },
+    },
   });
 });
 

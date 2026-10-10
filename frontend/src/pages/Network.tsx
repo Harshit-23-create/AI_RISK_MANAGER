@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShieldAlert, Activity, Globe, Radio, RefreshCw, Layers } from 'lucide-react';
-import { networkApi } from '../services/api';
+import { ShieldAlert, Activity, Globe, Radio, RefreshCw, Layers, Search, Filter, ShieldCheck } from 'lucide-react';
+import { networkApi, healthApi } from '../services/api';
 import type { NetworkStats, NetworkEvent } from '../types';
 import { formatTimestamp } from '../utils';
 import { KpiCard } from '../components/ui/KpiCard';
@@ -11,15 +11,22 @@ export default function NetworkPage() {
   const [events, setEvents] = useState<NetworkEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<NetworkEvent | null>(null);
+  const [mlConnected, setMlConnected] = useState<boolean>(true);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
 
   const fetchNetworkData = async () => {
     try {
-      const [s, e] = await Promise.all([
+      const [s, e, h] = await Promise.all([
         networkApi.stats().catch(() => null),
         networkApi.events().catch(() => ({ items: [] })),
+        healthApi.detailed().catch(() => null),
       ]);
       if (s) setStats(s);
       setEvents(e.items ?? []);
+      if (h?.components?.ml_service) {
+        setMlConnected(h.components.ml_service.connected);
+      }
     } finally {
       setLoading(false);
     }
@@ -27,19 +34,33 @@ export default function NetworkPage() {
 
   useEffect(() => {
     fetchNetworkData();
-    const interval = setInterval(fetchNetworkData, 5000);
+    const interval = setInterval(fetchNetworkData, 8000);
     return () => clearInterval(interval);
   }, []);
 
-  const packetData = events
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      const matchesSearch =
+        !searchFilter ||
+        ev.src_ip?.includes(searchFilter) ||
+        ev.dst_ip?.includes(searchFilter) ||
+        ev.endpoint?.toLowerCase().includes(searchFilter.toLowerCase());
+      const matchesSuspicious = !suspiciousOnly || ev.is_suspicious;
+      return matchesSearch && matchesSuspicious;
+    });
+  }, [events, searchFilter, suspiciousOnly]);
+
+  const packetData = filteredEvents
     .slice(0, 20)
     .map((e, i) => ({
-      name: `Ev ${i + 1}`,
+      name: `Pkt ${i + 1}`,
       rate: e.request_rate,
       failed: e.failed_request_count,
       suspicious: e.is_suspicious ? 1 : 0,
     }))
     .reverse();
+
+  const suspiciousIps = stats?.suspicious_ips ?? [];
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
@@ -57,7 +78,7 @@ export default function NetworkPage() {
 
         <button
           onClick={fetchNetworkData}
-          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center gap-2 self-start md:self-auto"
+          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center gap-2 self-start md:self-auto border border-slate-700"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Packets
         </button>
@@ -82,7 +103,7 @@ export default function NetworkPage() {
         />
         <KpiCard
           title="Suspicious Threat IPs"
-          value={(stats?.suspicious_ips?.length ?? 0).toString()}
+          value={suspiciousIps.length.toString()}
           subtext="Flagged in threat database"
           icon={Globe}
           iconColor="text-amber-400"
@@ -108,18 +129,24 @@ export default function NetworkPage() {
             <p className="text-[11px] text-slate-400">Comparing request rate vs failed auth attempts</p>
           </div>
 
-          <ResponsiveContainer width="100%" height={210} minWidth={0}>
-            <BarChart data={packetData}>
-              <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }}
-                formatter={(val: any, name: any) => [Number(val), name === 'rate' ? 'Req / sec' : 'Failed Attempts']}
-              />
-              <Bar dataKey="rate" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="failed" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {packetData.length === 0 ? (
+            <div className="h-[210px] flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+              No packet traffic samples recorded.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={210} minWidth={0}>
+              <BarChart data={packetData}>
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }}
+                  formatter={(val: any, name: any) => [Number(val), name === 'rate' ? 'Req / sec' : 'Failed Attempts']}
+                />
+                <Bar dataKey="rate" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="failed" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl flex flex-col justify-between">
@@ -131,29 +158,65 @@ export default function NetworkPage() {
               <p className="text-[11px] text-slate-400">Active foreign & botnet IP addresses</p>
             </div>
 
-            <div className="space-y-2">
-              {(stats?.suspicious_ips ?? ['185.220.101.50', '198.51.100.44', '203.0.113.99', '45.33.32.156']).map((ip, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 font-mono text-xs">
-                  <span className="text-cyan-400 font-bold">{ip}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                    Flagged IP
-                  </span>
+            <div className="space-y-2 max-h-[190px] overflow-y-auto">
+              {suspiciousIps.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                  <ShieldCheck className="w-6 h-6 text-emerald-400/60 mx-auto mb-1.5" />
+                  No blacklisted IPs detected. Threat database clear.
                 </div>
-              ))}
+              ) : (
+                suspiciousIps.map((ip, i) => (
+                  <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 font-mono text-xs">
+                    <span className="text-cyan-400 font-bold">{ip}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                      Flagged IP
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-1.5 mt-4">
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>Python ML DPI Microservice Connected</span>
+          <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between mt-4">
+            <div className="flex items-center gap-1.5">
+              <Radio className={`w-3.5 h-3.5 ${mlConnected ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
+              <span>{mlConnected ? 'ML DPI Engine Online' : 'DPI Engine in Fallback Mode'}</span>
+            </div>
+            <span className="text-[10px] font-mono text-slate-500">v1.0.0</span>
           </div>
         </div>
       </div>
 
       <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl space-y-4">
-        <div className="border-b border-slate-800 pb-3">
-          <h2 className="text-sm font-bold text-white">Inspected Layer-7 Packet Stream</h2>
-          <p className="text-[11px] text-slate-400">Click any packet event row to inspect payload metadata</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h2 className="text-sm font-bold text-white">Inspected Layer-7 Packet Stream</h2>
+            <p className="text-[11px] text-slate-400">Click any packet event row to inspect payload metadata</p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Filter by IP / Endpoint…"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="h-8 w-44 rounded-lg border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-slate-200 outline-none focus:border-cyan-500"
+              />
+            </div>
+            <button
+              onClick={() => setSuspiciousOnly(!suspiciousOnly)}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-colors ${
+                suspiciousOnly
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              <Filter className="w-3 h-3" />
+              <span>Suspicious Only</span>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -178,8 +241,14 @@ export default function NetworkPage() {
                     Loading packet stream...
                   </td>
                 </tr>
+              ) : filteredEvents.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-8 text-slate-500">
+                    No packet events match the current filter.
+                  </td>
+                </tr>
               ) : (
-                events.map((ev) => (
+                filteredEvents.map((ev) => (
                   <tr
                     key={ev.id}
                     onClick={() => setSelectedEvent(ev)}

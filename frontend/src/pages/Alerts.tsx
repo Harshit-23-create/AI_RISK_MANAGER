@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle,
   ArrowUpRight,
@@ -7,6 +8,9 @@ import {
   X,
   ShieldAlert,
   RefreshCw,
+  ExternalLink,
+  MessageSquare,
+  Save,
 } from 'lucide-react';
 import { alertsApi } from '../services/api';
 import type { AlertListResponse, Alert } from '../types';
@@ -18,12 +22,15 @@ const SEVERITIES = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 const STATUSES = ['ALL', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'ESCALATED'];
 
 export default function Alerts() {
+  const navigate = useNavigate();
   const [data, setData] = useState<AlertListResponse | null>(null);
   const [severity, setSeverity] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [notesInput, setNotesInput] = useState<string>('');
+  const [savingNotes, setSavingNotes] = useState<boolean>(false);
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -47,6 +54,7 @@ export default function Alerts() {
 
   useEffect(() => {
     if (!selectedAlert) return;
+    setNotesInput(selectedAlert.analyst_notes || '');
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSelectedAlert(null);
@@ -61,6 +69,9 @@ export default function Alerts() {
     try {
       await alertsApi.acknowledge(id);
       await fetchAlerts();
+      if (selectedAlert?.id === id) {
+        setSelectedAlert((prev) => (prev ? { ...prev, status: 'ACKNOWLEDGED' } : prev));
+      }
     } catch {
       alert('Failed to acknowledge alert');
     }
@@ -71,6 +82,9 @@ export default function Alerts() {
     try {
       await alertsApi.resolve(id);
       await fetchAlerts();
+      if (selectedAlert?.id === id) {
+        setSelectedAlert((prev) => (prev ? { ...prev, status: 'RESOLVED', is_resolved: true } : prev));
+      }
     } catch {
       alert('Failed to resolve alert');
     }
@@ -81,8 +95,25 @@ export default function Alerts() {
     try {
       await alertsApi.escalate(id);
       await fetchAlerts();
+      if (selectedAlert?.id === id) {
+        setSelectedAlert((prev) => (prev ? { ...prev, status: 'ESCALATED' } : prev));
+      }
     } catch {
       alert('Failed to escalate alert');
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedAlert) return;
+    setSavingNotes(true);
+    try {
+      await alertsApi.updateNotes(selectedAlert.id, notesInput.trim());
+      setSelectedAlert((prev) => (prev ? { ...prev, analyst_notes: notesInput.trim() } : prev));
+      await fetchAlerts();
+    } catch {
+      alert('Failed to save notes');
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -119,7 +150,7 @@ export default function Alerts() {
             </div>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
               Real-time fraud incident triage, severity escalation &amp; analyst
-              response.
+              response workflow.
             </p>
           </div>
 
@@ -235,7 +266,7 @@ export default function Alerts() {
 
                         {alert.transaction_id && (
                           <span className="max-w-full truncate rounded-md border border-slate-800 bg-slate-950 px-2 py-0.5 text-[9px] font-mono text-cyan-400">
-                            Tx: {truncateId(alert.transaction_id, 12)}
+                            Tx: {truncateId(alert.transaction_id, 16)}
                           </span>
                         )}
                       </div>
@@ -258,6 +289,11 @@ export default function Alerts() {
                         <span className="text-cyan-400">
                           Status: {alert.status || 'OPEN'}
                         </span>
+                        {alert.analyst_notes && (
+                          <span className="text-amber-400 flex items-center gap-1">
+                            <MessageSquare className="w-2.5 h-2.5" /> Note Attached
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -302,6 +338,7 @@ export default function Alerts() {
         )}
       </section>
 
+      {/* Detail Dialog */}
       {selectedAlert && (
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-md sm:items-center sm:p-4"
@@ -313,7 +350,7 @@ export default function Alerts() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="alert-dialog-title"
-            className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl sm:max-w-2xl sm:rounded-2xl sm:p-6"
+            className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl sm:max-w-2xl sm:rounded-2xl sm:p-6 space-y-4"
           >
             <div className="sticky top-0 z-10 -mx-4 -mt-4 flex items-start justify-between gap-3 border-b border-slate-800 bg-slate-900/95 p-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:p-6">
               <div className="min-w-0">
@@ -336,45 +373,110 @@ export default function Alerts() {
               </button>
             </div>
 
-            <div className="space-y-3 pt-4 text-xs text-slate-300 sm:pt-5">
+            <div className="space-y-3 pt-2 text-xs text-slate-300">
               <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 sm:p-4">
-                <span className="mb-1 block text-[9px] font-mono uppercase tracking-wider text-slate-500">
-                  Alert Evidence
+                <span className="mb-1 block text-[9px] font-mono uppercase tracking-wider text-slate-500 font-bold">
+                  Alert Evidence &amp; Signals
                 </span>
-                <p className="break-words leading-6">{selectedAlert.message}</p>
+                <p className="break-words leading-6 text-slate-200">{selectedAlert.message}</p>
               </div>
 
               <div className="grid gap-2 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-[10px] font-mono sm:grid-cols-2 sm:p-4">
-                <div className="break-words">
-                  Alert Type:{' '}
-                  <span className="text-white">{selectedAlert.alert_type}</span>
+                <div>
+                  Alert Type: <span className="text-white font-bold">{selectedAlert.alert_type}</span>
                 </div>
                 <div>
-                  Status:{' '}
-                  <span className="text-cyan-400">
-                    {selectedAlert.status || 'OPEN'}
-                  </span>
+                  Current Status: <span className="text-cyan-400 font-bold">{selectedAlert.status || 'OPEN'}</span>
                 </div>
                 <div>
-                  Created:{' '}
-                  <span className="text-slate-400">
-                    {formatTimestamp(selectedAlert.created_at)}
-                  </span>
+                  Created: <span className="text-slate-400">{formatTimestamp(selectedAlert.created_at)}</span>
                 </div>
-                <div className="break-words">
-                  Assigned:{' '}
-                  <span className="text-slate-400">
-                    {selectedAlert.assigned_to || 'SOC Analyst'}
-                  </span>
+                <div>
+                  Assigned Analyst: <span className="text-slate-300">{selectedAlert.assigned_to || 'SOC Analyst'}</span>
+                </div>
+              </div>
+
+              {/* Related Transaction Link */}
+              {selectedAlert.transaction_id && (
+                <div className="p-3.5 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase text-cyan-400 font-bold block">Related Ingested Transaction</span>
+                    <span className="font-mono text-xs text-white font-bold">{selectedAlert.transaction_id}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(`/transactions/${selectedAlert.transaction_id}`);
+                      setSelectedAlert(null);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-colors flex items-center gap-1.5"
+                  >
+                    Investigate <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Analyst Notes */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-cyan-400" /> Analyst Incident Triage Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={notesInput}
+                  onChange={(e) => setNotesInput(e.target.value)}
+                  placeholder="Record rationale, forensic observations, or escalated action steps..."
+                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-cyan-500 resize-none"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveNotes}
+                    disabled={savingNotes}
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-slate-700 disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" /> {savingNotes ? 'Saving...' : 'Save Note'}
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end border-t border-slate-800 pt-4">
+            {/* Modal action bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+              <div className="flex gap-2">
+                {selectedAlert.status !== 'ACKNOWLEDGED' && !selectedAlert.is_resolved && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleAcknowledge(selectedAlert.id, e)}
+                    className="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-bold transition-colors"
+                  >
+                    Acknowledge
+                  </button>
+                )}
+                {selectedAlert.status !== 'ESCALATED' && !selectedAlert.is_resolved && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleEscalate(selectedAlert.id, e)}
+                    className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-colors flex items-center gap-1"
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Escalate
+                  </button>
+                )}
+                {!selectedAlert.is_resolved && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleResolve(selectedAlert.id, e)}
+                    className="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs font-bold transition-colors flex items-center gap-1"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" /> Resolve
+                  </button>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={() => setSelectedAlert(null)}
-                className="min-h-9 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white"
               >
                 Close
               </button>

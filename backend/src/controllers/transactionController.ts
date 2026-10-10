@@ -62,7 +62,18 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
     const skip = (page - 1) * pageSize;
 
     const filter: Record<string, unknown> = {};
-    if (req.query.user_id) filter.userId = req.query.user_id;
+
+    const search = ((req.query.search || req.query.userId || req.query.q) as string || '').trim();
+    if (search) {
+      filter.$or = [
+        { transactionId: { $regex: search, $options: 'i' } },
+        { userId: { $regex: search, $options: 'i' } },
+        { ipAddress: { $regex: search, $options: 'i' } },
+      ];
+    } else if (req.query.user_id) {
+      filter.userId = req.query.user_id;
+    }
+
     if (req.query.status) filter.status = req.query.status;
     if (req.query.scenario_label) filter.scenarioLabel = req.query.scenario_label;
     if (req.query.is_new_device !== undefined) filter.isNewDevice = req.query.is_new_device === 'true';
@@ -99,6 +110,58 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
 
     const mappedItems = items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id))));
     res.json({ total, page, page_size: pageSize, items: mappedItems });
+  } catch (err) { next(err); }
+}
+
+export async function exportTransactionsCsv(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const filter: Record<string, unknown> = {};
+    const search = ((req.query.search || req.query.userId || req.query.q) as string || '').trim();
+    if (search) {
+      filter.$or = [
+        { transactionId: { $regex: search, $options: 'i' } },
+        { userId: { $regex: search, $options: 'i' } },
+        { ipAddress: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (req.query.decision) {
+      const decision = (req.query.decision as string).toUpperCase();
+      const raIds = await RiskAssessment.distinct('transactionId', { decision: decision as any });
+      filter._id = { $in: raIds };
+    }
+    if (req.query.min_amount || req.query.max_amount) {
+      const amountFilter: Record<string, number> = {};
+      if (req.query.min_amount) amountFilter.$gte = parseFloat(req.query.min_amount as string);
+      if (req.query.max_amount) amountFilter.$lte = parseFloat(req.query.max_amount as string);
+      filter.amount = amountFilter;
+    }
+
+    const items = await Transaction.find(filter).sort({ timestamp: -1 }).limit(1000).lean();
+    const txIds = items.map(i => String(i._id));
+    const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
+    const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
+    const scoreMap = new Map(assessments.map(a => [String(a.transactionId), a.finalScore]));
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="transactions_${Date.now()}.csv"`);
+
+    const headers = ['Transaction ID', 'Timestamp', 'Amount', 'Currency', 'User ID', 'IP Address', 'Payment Method', 'Failed Attempts', 'Risk Score', 'Decision', 'Status'];
+    const rows = items.map(txn => [
+      txn.transactionId,
+      txn.timestamp.toISOString(),
+      txn.amount,
+      txn.currency,
+      txn.userId,
+      txn.ipAddress || '',
+      txn.paymentMethod || 'UPI',
+      txn.failedAttempts,
+      scoreMap.get(String(txn._id)) ?? '',
+      decisionMap.get(String(txn._id)) || 'ALLOW',
+      txn.status,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(val => `"${String(val ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+    res.send(csvContent);
   } catch (err) { next(err); }
 }
 

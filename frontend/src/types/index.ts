@@ -1,4 +1,3 @@
-
 export interface LoginRequest {
   email: string;
   password: string;
@@ -82,6 +81,15 @@ export interface RiskAssessment {
   created_at: string;
 }
 
+export interface ModelPredictionItem {
+  model: string;
+  version: string;
+  score: number;
+  anomaly_flag: boolean;
+  predicted_class: string;
+  created_at: string;
+}
+
 export type AlertStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'ESCALATED';
 
 export interface Alert {
@@ -97,6 +105,7 @@ export interface Alert {
   resolved_at: string | null;
   escalated_at?: string | null;
   assigned_to?: string;
+  analyst_notes?: string | null;
   created_at: string;
 }
 
@@ -116,6 +125,13 @@ export interface DashboardStats {
     monitor: number;
     step_up: number;
     block: number;
+  };
+  average_breakdown?: {
+    transaction: number;
+    behavioral: number;
+    network: number;
+    ml_anomaly: number;
+    ml_supervised: number;
   };
   risk_timeline: Array<{ timestamp: string; risk_score: number; decision: string }>;
 }
@@ -171,4 +187,94 @@ export interface ModelStatus {
   isolation_forest: { loaded: boolean; features: string[] };
   xgboost: { loaded: boolean; shap_available: boolean; features: string[] };
   fallback_active: boolean;
+}
+
+export interface SearchResult {
+  transactions: Array<{
+    id: string;
+    transaction_id: string;
+    user_id: string;
+    amount: number;
+    currency: string;
+    ip_address: string | null;
+    decision: Decision;
+    timestamp: string;
+  }>;
+  alerts: Array<{
+    id: string;
+    title: string;
+    severity: Severity;
+    status: AlertStatus;
+    transaction_id: string | null;
+    created_at: string;
+  }>;
+}
+
+export interface AnalyticsData {
+  range: string;
+  daily_volume: Array<{
+    date: string;
+    volume: number;
+    total_amount: number;
+    fraud: number;
+  }>;
+  decision_trends: Array<{
+    date: string;
+    ALLOW: number;
+    MONITOR: number;
+    STEP_UP: number;
+    BLOCK: number;
+  }>;
+}
+
+export interface SystemSettings {
+  thresholds: {
+    allow: number;
+    monitor: number;
+    step_up: number;
+  };
+  weights: {
+    transaction: number;
+    behavioral: number;
+    network: number;
+    mlAnomaly: number;
+    mlSupervised: number;
+  };
+  simulation: {
+    intervalMs: number;
+    maxSimulatedTransactions: number;
+    defaultRate: number;
+    defaultSuspiciousRatio: number;
+  };
+  retention: {
+    maxTransactions: number;
+    maxNetworkEvents: number;
+    maxAlerts: number;
+  };
+  llmProvider?: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  user: string;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  ipAddress: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface DetailedHealthResponse {
+  status: string;
+  service: string;
+  version: string;
+  timestamp: string;
+  uptime_seconds: number;
+  components: {
+    backend: { status: string; latency_ms: number };
+    mongodb: { status: string; connected: boolean; latency_ms: number | null };
+    redis: { status: string; connected: boolean; latency_ms: number | null };
+    ml_service: { status: string; connected: boolean; latency_ms: number | null; models: Record<string, boolean> | null };
+  };
 }

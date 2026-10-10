@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type {
   TokenResponse, LoginRequest, Transaction, TransactionListResponse,
-  RiskAssessment, AlertListResponse, DashboardStats, NetworkStats, ModelStatus
+  RiskAssessment, AlertListResponse, DashboardStats, NetworkStats, ModelStatus,
+  SearchResult, AnalyticsData, SystemSettings, AuditLogItem, DetailedHealthResponse,
+  ModelPredictionItem
 } from '../types';
 import {
   mockDashboardStats,
@@ -39,7 +41,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    // Only redirect if genuinely an invalid token from an active backend, not offline demo tokens
     if (error.response?.status === 401 && !localStorage.getItem('is_demo_mode')) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
@@ -89,6 +90,7 @@ export const transactionsApi = {
     pageSize?: number;
     decision?: string;
     userId?: string;
+    search?: string;
     minAmount?: number;
     maxAmount?: number;
     fromDate?: string;
@@ -100,6 +102,7 @@ export const transactionsApi = {
         page_size: params?.pageSize || 50,
         decision: params?.decision,
         user_id: params?.userId,
+        search: params?.search,
         min_amount: params?.minAmount,
         max_amount: params?.maxAmount,
         from_date: params?.fromDate,
@@ -122,6 +125,28 @@ export const transactionsApi = {
     api.get<Transaction>(`/transactions/${id}`)
       .then(r => r.data)
       .catch(() => mockTransactions.find(t => t.id === id || t.transaction_id === id) || mockTransactions[0]),
+  exportCsvUrl: (params?: Record<string, string | number | undefined>) => {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') query.append(k, String(v));
+      });
+    }
+    return `${API_BASE}/transactions/export/csv?${query.toString()}`;
+  },
+  downloadCsv: async (params?: Record<string, string | number | undefined>) => {
+    const response = await api.get('/transactions/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `transactions_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
 };
 
 export const riskApi = {
@@ -140,6 +165,16 @@ export const riskApi = {
         risk_score: mockRiskAssessment.risk_score,
         decision: mockRiskAssessment.decision,
       })),
+  getPredictions: (transactionId: string) =>
+    api.get<{ transaction_id: string; predictions: ModelPredictionItem[] }>(`/risk/${transactionId}/predictions`)
+      .then(r => r.data)
+      .catch(() => ({
+        transaction_id: transactionId,
+        predictions: [
+          { model: 'isolation_forest', version: 'v1.0', score: 28, anomaly_flag: false, predicted_class: 'normal', created_at: new Date().toISOString() },
+          { model: 'xgboost', version: 'v1.0', score: 32, anomaly_flag: false, predicted_class: 'normal', created_at: new Date().toISOString() },
+        ],
+      })),
 };
 
 export const alertsApi = {
@@ -149,12 +184,14 @@ export const alertsApi = {
     })
       .then(r => r.data)
       .catch(() => mockAlerts),
-  acknowledge: (id: string) =>
-    api.patch(`/alerts/${id}/acknowledge`).then(r => r.data).catch(() => ({ success: true })),
-  resolve: (id: string) =>
-    api.patch(`/alerts/${id}/resolve`).then(r => r.data).catch(() => ({ success: true })),
-  escalate: (id: string) =>
-    api.patch(`/alerts/${id}/escalate`).then(r => r.data).catch(() => ({ success: true })),
+  acknowledge: (id: string, notes?: string) =>
+    api.patch(`/alerts/${id}/acknowledge`, { notes }).then(r => r.data).catch(() => ({ success: true })),
+  resolve: (id: string, notes?: string) =>
+    api.patch(`/alerts/${id}/resolve`, { notes }).then(r => r.data).catch(() => ({ success: true })),
+  escalate: (id: string, notes?: string) =>
+    api.patch(`/alerts/${id}/escalate`, { notes }).then(r => r.data).catch(() => ({ success: true })),
+  updateNotes: (id: string, notes: string, assigned_to?: string) =>
+    api.patch(`/alerts/${id}/notes`, { notes, assigned_to }).then(r => r.data).catch(() => ({ success: true })),
 };
 
 export const dashboardApi = {
@@ -162,6 +199,34 @@ export const dashboardApi = {
     api.get<DashboardStats>('/dashboard/stats')
       .then(r => r.data)
       .catch(() => mockDashboardStats),
+  search: (q: string) =>
+    api.get<SearchResult>('/dashboard/search', { params: { q } })
+      .then(r => r.data)
+      .catch(() => ({ transactions: [], alerts: [] })),
+  analytics: (range = '7D') =>
+    api.get<AnalyticsData>('/dashboard/analytics', { params: { range } })
+      .then(r => r.data)
+      .catch(() => ({
+        range,
+        daily_volume: [
+          { date: '2026-10-05', volume: 1420, total_amount: 1450000, fraud: 12 },
+          { date: '2026-10-06', volume: 1680, total_amount: 1820000, fraud: 18 },
+          { date: '2026-10-07', volume: 1540, total_amount: 1620000, fraud: 9 },
+          { date: '2026-10-08', volume: 1950, total_amount: 2100000, fraud: 25 },
+          { date: '2026-10-09', volume: 2210, total_amount: 2450000, fraud: 31 },
+          { date: '2026-10-10', volume: 2480, total_amount: 2890000, fraud: 19 },
+          { date: '2026-10-11', volume: 1890, total_amount: 1980000, fraud: 14 },
+        ],
+        decision_trends: [
+          { date: '2026-10-05', ALLOW: 1300, MONITOR: 80, STEP_UP: 28, BLOCK: 12 },
+          { date: '2026-10-06', ALLOW: 1520, MONITOR: 105, STEP_UP: 37, BLOCK: 18 },
+          { date: '2026-10-07', ALLOW: 1430, MONITOR: 72, STEP_UP: 29, BLOCK: 9 },
+          { date: '2026-10-08', ALLOW: 1750, MONITOR: 124, STEP_UP: 51, BLOCK: 25 },
+          { date: '2026-10-09', ALLOW: 1980, MONITOR: 142, STEP_UP: 57, BLOCK: 31 },
+          { date: '2026-10-10', ALLOW: 2280, MONITOR: 128, STEP_UP: 53, BLOCK: 19 },
+          { date: '2026-10-11', ALLOW: 1720, MONITOR: 110, STEP_UP: 46, BLOCK: 14 },
+        ],
+      })),
 };
 
 export const networkApi = {
@@ -187,9 +252,29 @@ export const simulationApi = {
   demo: () =>
     api.post('/simulation/demo').then(r => r.data).catch(() => ({ message: 'Demo batch dispatched' })),
   triggerScenario: (scenario: string) =>
-    api.post('/simulation/trigger', { scenario })
+    api.post<{ message: string; transaction_id: string; amount: number; user_id: string }>('/simulation/trigger', { scenario })
       .then(r => r.data)
-      .catch(() => ({ message: `Triggered ${scenario}` })),
+      .catch(() => ({ message: `Triggered ${scenario}`, transaction_id: 'TXN_' + Date.now(), amount: 5000, user_id: 'USER_0001' })),
+};
+
+export const adminApi = {
+  getSettings: () =>
+    api.get<SystemSettings>('/admin/settings').then(r => r.data),
+  updateSettings: (data: Partial<SystemSettings>) =>
+    api.post('/admin/settings', data).then(r => r.data),
+  getAuditLogs: (page = 1, pageSize = 25) =>
+    api.get<{ total: number; page: number; page_size: number; items: AuditLogItem[] }>('/admin/audit-logs', {
+      params: { page, page_size: pageSize }
+    }).then(r => r.data),
+  resetData: () =>
+    api.post('/admin/reset-data').then(r => r.data),
+  getDatabaseStats: () =>
+    api.get('/admin/database-stats').then(r => r.data),
+};
+
+export const healthApi = {
+  detailed: () =>
+    api.get<DetailedHealthResponse>('/health/detailed').then(r => r.data),
 };
 
 export const modelsApi = {

@@ -2,8 +2,9 @@
 import { ITransaction } from '../models/Transaction';
 import { predict, analyzeNetwork, MLPredictRequest, NetworkResponse } from '../ml/mlClient';
 import { config } from '../config/env';
+import { runtimeSettings } from '../config/runtimeConfig';
 
-const WEIGHTS = {
+const getWeights = () => runtimeSettings?.weights || {
   transaction:   0.25,
   behavioral:    0.25,
   network:       0.20,
@@ -211,12 +212,13 @@ export async function computeRisk(txn: ITransaction): Promise<RiskResult> {
 
   const mlResult = await predict(mlFeatures);
 
+  const w = getWeights();
   const finalScore = Math.min(100, Math.max(0,
-    WEIGHTS.transaction  * txnScore +
-    WEIGHTS.behavioral   * behScore +
-    WEIGHTS.network      * netScore +
-    WEIGHTS.mlAnomaly    * mlResult.anomalyScore +
-    WEIGHTS.mlSupervised * mlResult.supervisedScore,
+    w.transaction  * txnScore +
+    w.behavioral   * behScore +
+    w.network      * netScore +
+    w.mlAnomaly    * mlResult.anomalyScore +
+    w.mlSupervised * mlResult.supervisedScore,
   ));
 
   const roundedScore = Math.round(finalScore * 100) / 100;

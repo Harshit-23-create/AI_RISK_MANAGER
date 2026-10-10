@@ -11,6 +11,7 @@ import Network from './pages/Network';
 import Simulation from './pages/Simulation';
 import Analytics from './pages/Analytics';
 import SystemHealth from './pages/SystemHealth';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/simulation" element={<Simulation />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/system-health" element={<SystemHealth />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,10 +1,18 @@
-import { useEffect, useState } from 'react';
-import { LogOut, Zap, Search, Bell, Menu, ChevronDown } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  LogOut, Zap, Search, Bell, Menu, ChevronDown,
+  Settings as SettingsIcon, ShieldAlert, ArrowRight, X, Clock
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import type { WsStatus } from '../../hooks/useRiskFeed';
 import { useRiskFeed } from '../../hooks/useRiskFeed';
-import { simulationApi } from '../../services/api';
+import { simulationApi, dashboardApi, alertsApi } from '../../services/api';
+import type { SearchResult, Alert } from '../../types';
+import { formatCurrency, formatTimestamp } from '../../utils';
+import { RiskBadge } from '../ui/RiskBadge';
+import { SeverityBadge } from '../ui/SeverityBadge';
 
 interface HeaderProps {
   mobileMenuOpen: boolean;
@@ -16,21 +24,78 @@ export default function Header({
   setMobileMenuOpen,
 }: HeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Global search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Notifications state
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const { status: wsStatus } = useRiskFeed(() => {});
 
-  useEffect(() => {
-    if (!userMenuOpen) return;
+  // Fetch open alerts for notification center
+  const loadNotifications = async () => {
+    try {
+      const res = await alertsApi.list(1, undefined, 'OPEN', true);
+      setAlerts(res.items || []);
+    } catch {
+      // offline fallback handled by api service
+    }
+  };
 
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setUserMenuOpen(false);
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Debounced global search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      setSearchOpen(false);
+      return;
+    }
+
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await dashboardApi.search(searchQuery.trim());
+        setSearchResults(results);
+        setSearchOpen(true);
+      } catch {
+        setSearchResults(null);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Click outside listener for search & notifications
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+      }
     };
 
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [userMenuOpen]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const startDemo = async () => {
     setLoading(true);
@@ -93,21 +158,119 @@ export default function Header({
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="relative hidden w-full max-w-xl md:block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <input
-            type="search"
-            aria-label="Search transactions, users, and IP addresses"
-            placeholder="Search transactions, users, IP addresses…"
-            className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-9 pr-4 text-xs text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
-          />
+        {/* Global Search Bar with Live Results Dropdown */}
+        <div ref={searchRef} className="relative hidden w-full max-w-xl md:block">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              aria-label="Search transactions, users, and IP addresses"
+              placeholder="Search across Tx IDs, users, IP addresses & alerts…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery.trim() && setSearchOpen(true)}
+              className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-9 pr-8 text-xs text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setSearchOpen(false); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Search Dropdown Popup */}
+          {searchOpen && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 text-xs">
+              {searching ? (
+                <div className="p-4 text-center text-slate-400 flex items-center justify-center gap-2">
+                  <Clock className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  Searching SOC database...
+                </div>
+              ) : (!searchResults?.transactions.length && !searchResults?.alerts.length) ? (
+                <div className="p-4 text-center text-slate-500">
+                  No matching transactions or alerts found for "{searchQuery}".
+                </div>
+              ) : (
+                <div className="max-h-[70vh] overflow-y-auto divide-y divide-slate-800/60">
+                  {/* Matching Transactions */}
+                  {Boolean(searchResults?.transactions.length) && (
+                    <div className="p-3">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2 font-bold px-1">
+                        Matching Transactions ({searchResults!.transactions.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults!.transactions.map((tx) => (
+                          <div
+                            key={tx.id}
+                            onClick={() => {
+                              navigate(`/transactions/${tx.transaction_id}`);
+                              setSearchOpen(false);
+                            }}
+                            className="p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-mono text-cyan-400 font-bold block truncate">
+                                {tx.transaction_id}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                User: {tx.user_id} {tx.ip_address ? `• IP: ${tx.ip_address}` : ''}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="font-bold text-white">
+                                {formatCurrency(tx.amount, tx.currency)}
+                              </span>
+                              <RiskBadge decision={tx.decision} size="sm" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Matching Alerts */}
+                  {Boolean(searchResults?.alerts.length) && (
+                    <div className="p-3">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2 font-bold px-1">
+                        Matching Alerts ({searchResults!.alerts.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults!.alerts.map((al) => (
+                          <div
+                            key={al.id}
+                            onClick={() => {
+                              navigate('/alerts');
+                              setSearchOpen(false);
+                            }}
+                            className="p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <span className="font-bold text-white block truncate">{al.title}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatTimestamp(al.created_at)} • Status: {al.status}
+                              </span>
+                            </div>
+                            <SeverityBadge severity={al.severity} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="min-w-0 md:hidden">
           <span className="block truncate text-xs font-bold text-white">
             AI Risk Manager
           </span>
-          <span className="block text-[9px] uppercase tracking-wider text-slate-500">
+          <span className="block text-[9px] uppercase tracking-wider text-slate-500 font-mono">
             SOC Console
           </span>
         </div>
@@ -129,15 +292,78 @@ export default function Header({
           </span>
         </button>
 
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-slate-950" />
-        </button>
+        {/* Notifications Popover */}
+        <div ref={notifRef} className="relative">
+          <button
+            type="button"
+            aria-label="Notifications"
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          >
+            <Bell className="h-4 w-4" />
+            {alerts.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-slate-950">
+                {alerts.length > 9 ? '9+' : alerts.length}
+              </span>
+            )}
+          </button>
 
+          {notificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl z-50">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 px-1 mb-2">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> Active Security Alerts
+                </span>
+                <span className="text-[10px] font-mono text-cyan-400 font-bold">
+                  {alerts.length} Pending
+                </span>
+              </div>
+
+              <div className="max-h-72 overflow-y-auto space-y-1.5">
+                {alerts.length === 0 ? (
+                  <div className="p-4 text-center text-slate-500 text-xs">
+                    All security incidents acknowledged & resolved.
+                  </div>
+                ) : (
+                  alerts.slice(0, 5).map((al) => (
+                    <div
+                      key={al.id}
+                      onClick={() => {
+                        navigate('/alerts');
+                        setNotificationsOpen(false);
+                      }}
+                      className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer space-y-1 transition-all"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-xs font-bold text-white truncate">{al.title}</span>
+                        <SeverityBadge severity={al.severity} />
+                      </div>
+                      <p className="text-[11px] text-slate-400 line-clamp-1">{al.message}</p>
+                      <span className="text-[9px] font-mono text-slate-500 block">
+                        {formatTimestamp(al.created_at)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 mt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/alerts');
+                    setNotificationsOpen(false);
+                  }}
+                  className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1 w-full"
+                >
+                  Manage All Alerts <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Account Menu */}
         <div className="relative">
           <button
             type="button"
@@ -187,21 +413,26 @@ export default function Header({
 
                 <button
                   type="button"
-                  className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    navigate('/settings');
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
                 >
-                  Profile
+                  <SettingsIcon className="h-3.5 w-3.5 text-cyan-400" />
+                  Policy &amp; Settings
                 </button>
+
                 <button
                   type="button"
-                  className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    navigate('/system-health');
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
                 >
-                  Settings
-                </button>
-                <button
-                  type="button"
-                  className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
-                >
-                  Security
+                  <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                  Observability &amp; Health
                 </button>
 
                 <div className="my-1 h-px bg-slate-800" />

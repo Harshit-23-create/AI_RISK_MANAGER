@@ -8,7 +8,7 @@ import {
   Activity, ShieldX, TrendingUp, Pause, Play,
   Search, ShieldAlert, CheckCircle, Radio, Clock, Zap, AlertOctagon, ArrowRight
 } from 'lucide-react';
-import { dashboardApi, alertsApi } from '../services/api';
+import { dashboardApi, alertsApi, transactionsApi } from '../services/api';
 import { useRiskFeed } from '../hooks/useRiskFeed';
 import type { DashboardStats, RiskFeedEvent, AlertListResponse } from '../types';
 import { formatCurrency, formatTimestamp, truncateId } from '../utils';
@@ -64,12 +64,31 @@ export default function Dashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsData, alertsData] = await Promise.all([
+      const [statsData, alertsData, txData] = await Promise.all([
         dashboardApi.stats(),
-        alertsApi.list(1, 'CRITICAL', 'OPEN')
+        alertsApi.list(1, 'CRITICAL', 'OPEN'),
+        transactionsApi.list({ page: 1, pageSize: 20 }).catch(() => ({ items: [] })),
       ]);
       setStats(statsData);
       setRecentAlerts(alertsData);
+      if (txData?.items?.length) {
+        setFeed((prev) => {
+          if (prev.length === 0) {
+            return txData.items.map((t: any) => ({
+              type: 'risk_assessment' as const,
+              transaction_id: t.transaction_id || t.id,
+              user_id: t.user_id,
+              amount: t.amount,
+              currency: t.currency || 'USD',
+              ip_address: t.ip_address,
+              decision: t.decision || 'ALLOW',
+              risk_score: t.risk_score || 0,
+              timestamp: t.timestamp || new Date().toISOString(),
+            }));
+          }
+          return prev;
+        });
+      }
     } catch (e) {
       console.error('[Dashboard] Failed to fetch stats:', e);
       addToast('error', 'Refresh Failed', 'Could not load dashboard stats. Check your connection.');
@@ -443,7 +462,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <RiskFactorBreakdown />
+          <RiskFactorBreakdown breakdown={stats?.average_breakdown} />
         </div>
       </div>
     </div>

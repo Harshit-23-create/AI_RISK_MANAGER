@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { Alert } from '../models/Alert';
+import { AuditLog } from '../models/AuditLog';
 import { HttpError } from '../middleware/errorHandler';
 
 export async function listAlerts(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
@@ -22,7 +24,7 @@ export async function listAlerts(req: AuthRequest, res: Response, next: NextFunc
 
     const mapped = items.map(a => ({
       id: String(a._id),
-      transaction_id: a.transactionId ? String(a.transactionId) : null,
+      transaction_id: a.transactionUuid || (a.transactionId ? String(a.transactionId) : null),
       severity: a.severity,
       alert_type: a.alertType,
       title: a.title,
@@ -33,6 +35,7 @@ export async function listAlerts(req: AuthRequest, res: Response, next: NextFunc
       resolved_at: a.resolvedAt ?? null,
       escalated_at: a.escalatedAt ?? null,
       assigned_to: a.assignedTo ?? 'SOC Analyst',
+      analyst_notes: a.analystNotes ?? null,
       created_at: a.createdAt,
     }));
 
@@ -43,38 +46,117 @@ export async function listAlerts(req: AuthRequest, res: Response, next: NextFunc
 export async function acknowledgeAlert(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const alert = await Alert.findByIdAndUpdate(
-      id,
-      { status: 'ACKNOWLEDGED', acknowledgedAt: new Date() },
-      { new: true }
-    ).lean();
+    const notes = req.body?.notes;
+    const update: Record<string, unknown> = {
+      status: 'ACKNOWLEDGED',
+      acknowledgedAt: new Date(),
+    };
+    if (notes) update.analystNotes = notes;
+    if (req.body?.assigned_to) update.assignedTo = req.body.assigned_to;
+
+    const alert = await Alert.findByIdAndUpdate(id, update, { new: true }).lean();
     if (!alert) throw new HttpError(404, 'Alert not found');
-    res.json({ id: String(alert._id), status: alert.status, acknowledged_at: alert.acknowledgedAt });
+
+    await AuditLog.create({
+      userId: req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : undefined,
+      action: 'ACKNOWLEDGE_ALERT',
+      resource: 'ALERT',
+      resourceId: String(id),
+      ipAddress: req.ip || '127.0.0.1',
+      timestamp: new Date(),
+    });
+
+    res.json({
+      id: String(alert._id),
+      status: alert.status,
+      acknowledged_at: alert.acknowledgedAt,
+      analyst_notes: alert.analystNotes,
+    });
   } catch (err) { next(err); }
 }
 
 export async function resolveAlert(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const alert = await Alert.findByIdAndUpdate(
-      id,
-      { status: 'RESOLVED', isResolved: true, resolvedAt: new Date() },
-      { new: true }
-    ).lean();
+    const notes = req.body?.notes;
+    const update: Record<string, unknown> = {
+      status: 'RESOLVED',
+      isResolved: true,
+      resolvedAt: new Date(),
+    };
+    if (notes) update.analystNotes = notes;
+
+    const alert = await Alert.findByIdAndUpdate(id, update, { new: true }).lean();
     if (!alert) throw new HttpError(404, 'Alert not found');
-    res.json({ id: String(alert._id), status: alert.status, is_resolved: alert.isResolved, resolved_at: alert.resolvedAt });
+
+    await AuditLog.create({
+      userId: req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : undefined,
+      action: 'RESOLVE_ALERT',
+      resource: 'ALERT',
+      resourceId: String(id),
+      ipAddress: req.ip || '127.0.0.1',
+      metadata: { notes },
+      timestamp: new Date(),
+    });
+
+    res.json({
+      id: String(alert._id),
+      status: alert.status,
+      is_resolved: alert.isResolved,
+      resolved_at: alert.resolvedAt,
+      analyst_notes: alert.analystNotes,
+    });
   } catch (err) { next(err); }
 }
 
 export async function escalateAlert(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const alert = await Alert.findByIdAndUpdate(
-      id,
-      { status: 'ESCALATED', escalatedAt: new Date() },
-      { new: true }
-    ).lean();
+    const notes = req.body?.notes;
+    const update: Record<string, unknown> = {
+      status: 'ESCALATED',
+      escalatedAt: new Date(),
+    };
+    if (notes) update.analystNotes = notes;
+
+    const alert = await Alert.findByIdAndUpdate(id, update, { new: true }).lean();
     if (!alert) throw new HttpError(404, 'Alert not found');
-    res.json({ id: String(alert._id), status: alert.status, escalated_at: alert.escalatedAt });
+
+    await AuditLog.create({
+      userId: req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : undefined,
+      action: 'ESCALATE_ALERT',
+      resource: 'ALERT',
+      resourceId: String(id),
+      ipAddress: req.ip || '127.0.0.1',
+      metadata: { notes },
+      timestamp: new Date(),
+    });
+
+    res.json({
+      id: String(alert._id),
+      status: alert.status,
+      escalated_at: alert.escalatedAt,
+      analyst_notes: alert.analystNotes,
+    });
+  } catch (err) { next(err); }
+}
+
+export async function updateAlertNotes(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { notes, assigned_to } = req.body;
+    const update: Record<string, unknown> = {};
+    if (notes !== undefined) update.analystNotes = notes;
+    if (assigned_to !== undefined) update.assignedTo = assigned_to;
+
+    const alert = await Alert.findByIdAndUpdate(id, update, { new: true }).lean();
+    if (!alert) throw new HttpError(404, 'Alert not found');
+
+    res.json({
+      id: String(alert._id),
+      status: alert.status,
+      analyst_notes: alert.analystNotes,
+      assigned_to: alert.assignedTo,
+    });
   } catch (err) { next(err); }
 }

@@ -123,7 +123,7 @@ export async function createTransactionWithRisk(input: CreateTransactionInput): 
 
   const alerts = generateAlerts(txn, riskResult);
   if (alerts.length > 0) {
-    await Alert.insertMany(alerts.map(a => ({ ...a, transactionId: txn._id })));
+    await Alert.insertMany(alerts.map(a => ({ ...a, transactionId: txn._id, transactionUuid: txn.transactionId })));
   }
 
   txn.status = 'processed';

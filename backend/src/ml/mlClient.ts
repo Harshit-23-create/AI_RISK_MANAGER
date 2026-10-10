@@ -176,3 +176,13 @@ export async function checkHealth(): Promise<boolean> {
     return false;
   }
 }
+
+export async function checkMlHealthWithLatency(): Promise<{ ok: boolean; latencyMs: number | null; models?: Record<string, boolean> }> {
+  const t0 = Date.now();
+  try {
+    const { data } = await mlClient.get<{ status: string; models: Record<string, boolean> }>('/health', { timeout: 2000 });
+    return { ok: true, latencyMs: Date.now() - t0, models: data.models };
+  } catch {
+    return { ok: false, latencyMs: null };
+  }
+}
