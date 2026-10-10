@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginAsDemo } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,11 +46,10 @@ export default function Login() {
     try {
       await login('admin@riskmanager.ai', 'Admin@123');
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.error?.message ||
-          'Demo login failed. Please check the server connection.'
-      );
+    } catch (_err) {
+      // Seamless resilience: If live backend is sleeping or unreachable, launch instant demo session
+      loginAsDemo();
+      navigate('/dashboard');
     } finally {
       setDemoLoading(false);
     }
