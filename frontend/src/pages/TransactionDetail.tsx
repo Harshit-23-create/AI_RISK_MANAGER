@@ -189,13 +189,22 @@ export default function TransactionDetail() {
       <div className="min-h-[420px]">
         {/* Tab 1: Overview */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RiskScoreGauge
-              score={risk?.risk_score || 0}
-              decision={risk?.decision}
-              confidence={risk?.confidence}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RiskScoreGauge
+                score={risk?.risk_score || 0}
+                decision={risk?.decision}
+                confidence={risk?.confidence}
+              />
+              <RiskFactorBreakdown breakdown={risk?.breakdown} />
+            </div>
+
+            <AiExplanationCard
+              explanation={risk?.llm_explanation}
+              riskAssessment={risk}
+              onExplain={requestExplanation}
+              loading={explaining}
             />
-            <RiskFactorBreakdown breakdown={risk?.breakdown} />
           </div>
         )}
 
