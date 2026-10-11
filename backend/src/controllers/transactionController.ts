@@ -107,8 +107,9 @@ export async function listTransactions(req: AuthRequest, res: Response, next: Ne
     const txIds = items.map(i => String(i._id));
     const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
     const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
+    const scoreMap = new Map(assessments.map(a => [String(a.transactionId), a.finalScore]));
 
-    const mappedItems = items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id))));
+    const mappedItems = items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id)), scoreMap.get(String(txn._id))));
     res.json({ total, page, page_size: pageSize, items: mappedItems });
   } catch (err) { next(err); }
 }
@@ -169,7 +170,8 @@ export async function getTransaction(req: AuthRequest, res: Response, next: Next
   try {
     const txn = await Transaction.findOne({ transactionId: req.params.transaction_id }).lean();
     if (!txn) throw new HttpError(404, 'Transaction not found');
-    res.json(mapTxnToResponse(txn));
+    const assessment = await RiskAssessment.findOne({ transactionId: txn._id }).lean();
+    res.json(mapTxnToResponse(txn, assessment?.decision, assessment?.finalScore));
   } catch (err) { next(err); }
 }
 
@@ -224,12 +226,13 @@ export async function getUserHistory(req: AuthRequest, res: Response, next: Next
     const txIds = items.map(i => String(i._id));
     const assessments = await RiskAssessment.find({ transactionId: { $in: txIds } }).lean();
     const decisionMap = new Map(assessments.map(a => [String(a.transactionId), a.decision]));
+    const scoreMap = new Map(assessments.map(a => [String(a.transactionId), a.finalScore]));
 
-    res.json({ total, page, page_size: pageSize, items: items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id)))) });
+    res.json({ total, page, page_size: pageSize, items: items.map(txn => mapTxnToResponse(txn, decisionMap.get(String(txn._id)), scoreMap.get(String(txn._id)))) });
   } catch (err) { next(err); }
 }
 
-function mapTxnToResponse(txn: any, decision?: string) {
+function mapTxnToResponse(txn: any, decision?: string, riskScore?: number) {
   return {
     id: String(txn._id),
     transaction_id: txn.transactionId,
@@ -252,6 +255,7 @@ function mapTxnToResponse(txn: any, decision?: string) {
     scenario_label: txn.scenarioLabel ?? null,
     status: txn.status,
     decision: decision || null,
+    risk_score: riskScore !== undefined ? riskScore : null,
     timestamp: txn.timestamp,
     created_at: txn.createdAt,
   };

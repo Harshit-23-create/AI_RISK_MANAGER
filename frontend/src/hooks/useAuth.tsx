@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user_id: 1,
       email: 'admin@riskmanager.ai',
       role: 'admin',
+      full_name: 'Lead Risk Analyst',
     };
     localStorage.setItem('access_token', demoUser.access_token);
     localStorage.setItem('user', JSON.stringify(demoUser));

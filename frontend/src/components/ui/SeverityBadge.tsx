@@ -10,26 +10,27 @@ interface SeverityBadgeProps {
 export const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity, size = 'md' }) => {
   const s = (severity || 'LOW').toUpperCase();
 
-  let colors = 'bg-slate-500/10 text-slate-400 border-slate-500/30';
+  let styles = 'bg-slate-900/60 text-slate-400 border-slate-700/60';
   let Icon = Info;
 
   if (s === 'MEDIUM') {
-    colors = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+    styles = 'bg-amber-950/40 text-amber-400 border-amber-800/50';
     Icon = AlertTriangle;
   } else if (s === 'HIGH') {
-    colors = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+    styles = 'bg-orange-950/40 text-orange-400 border-orange-800/50';
     Icon = AlertCircle;
   } else if (s === 'CRITICAL') {
-    colors = 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse';
+    styles = 'bg-rose-950/50 text-rose-400 border-rose-800/60 font-bold';
     Icon = ShieldAlert;
   }
 
-  const px = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
+  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[10px] gap-1' : 'px-2 py-0.5 text-[11px] gap-1.5';
+  const iconSize = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3';
 
   return (
-    <span className={`inline-flex items-center gap-1 font-bold rounded-md border ${colors} ${px} uppercase tracking-wider`}>
-      <Icon className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-      {s}
+    <span className={`inline-flex items-center font-mono font-semibold rounded border ${styles} ${px} uppercase tracking-wider`}>
+      <Icon className={iconSize} />
+      <span>{s}</span>
     </span>
   );
 };

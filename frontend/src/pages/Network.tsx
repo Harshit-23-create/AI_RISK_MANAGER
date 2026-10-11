@@ -1,10 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShieldAlert, Activity, Globe, Radio, RefreshCw, Layers, Search, Filter, ShieldCheck } from 'lucide-react';
+import {
+  ShieldAlert, Activity, Globe, RefreshCw, Layers, Search, Filter, ShieldCheck,
+  X, Copy, Check
+} from 'lucide-react';
 import { networkApi, healthApi } from '../services/api';
 import type { NetworkStats, NetworkEvent } from '../types';
 import { formatTimestamp } from '../utils';
+import { PageHeader } from '../components/ui/PageHeader';
 import { KpiCard } from '../components/ui/KpiCard';
+import { SkeletonTable } from '../components/ui/SkeletonLoader';
 
 export default function NetworkPage() {
   const [stats, setStats] = useState<NetworkStats | null>(null);
@@ -14,6 +19,7 @@ export default function NetworkPage() {
   const [mlConnected, setMlConnected] = useState<boolean>(true);
   const [searchFilter, setSearchFilter] = useState('');
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
+  const [copiedIp, setCopiedIp] = useState<string | null>(null);
 
   const fetchNetworkData = async () => {
     try {
@@ -62,136 +68,163 @@ export default function NetworkPage() {
 
   const suspiciousIps = stats?.suspicious_ips ?? [];
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIp(text);
+    setTimeout(() => setCopiedIp(null), 2000);
+  };
+
   return (
-    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black text-white tracking-tight">Deep Packet Inspection (DPI) & Network Monitor</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              Layer-7 Traffic Telemetry
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">Real-time HTTP/TCP packet analysis, payload inspection & anomaly threat detection</p>
-        </div>
-
+    <div className="space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        category="Network Intelligence"
+        title="Deep Packet Inspection (DPI) & Network Security"
+        subtitle="Real-time Layer-7 HTTP/TCP traffic inspection, payload metadata extraction, and anomalous IP behavior detection"
+        badge={
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-900 border border-slate-800 text-slate-300">
+            <span className={`h-1.5 w-1.5 rounded-full ${mlConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            {mlConnected ? 'DPI Engine Live' : 'Fallback Engine'}
+          </span>
+        }
+      >
         <button
+          type="button"
           onClick={fetchNetworkData}
-          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center gap-2 self-start md:self-auto border border-slate-700"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 border border-slate-800 px-3 text-xs font-medium text-slate-300 hover:text-white transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Packets
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Telemetry</span>
         </button>
-      </div>
+      </PageHeader>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           title="Total DPI Events"
           value={stats?.total_events?.toLocaleString() ?? '0'}
-          subtext="Inspected network packets"
+          subtext="Inspected packets"
           icon={Layers}
-          iconColor="text-blue-400"
-          accentColor="from-blue-500/10 to-indigo-900/10"
         />
         <KpiCard
-          title="Average Request Rate"
+          title="Throughput Rate"
           value={`${stats?.average_request_rate?.toFixed(1) ?? '0.0'} req/s`}
-          subtext="Throughput velocity"
+          subtext="Request velocity"
           icon={Activity}
-          iconColor="text-cyan-400"
-          accentColor="from-cyan-500/10 to-teal-900/10"
         />
         <KpiCard
-          title="Suspicious Threat IPs"
+          title="Flagged Threat IPs"
           value={suspiciousIps.length.toString()}
-          subtext="Flagged in threat database"
+          subtext="Active in threat memory"
           icon={Globe}
-          iconColor="text-amber-400"
-          accentColor="from-amber-500/10 to-orange-900/10"
+          badge={suspiciousIps.length > 0 ? 'ACTIVE THREATS' : 'CLEAR'}
+          badgeVariant={suspiciousIps.length > 0 ? 'danger' : 'success'}
         />
         <KpiCard
-          title="Suspicious Events"
+          title="Anomalous Packets"
           value={stats?.suspicious_events?.toLocaleString() ?? '0'}
-          subtext="High risk DPI flags"
+          subtext="High anomaly flags"
           icon={ShieldAlert}
-          iconColor="text-rose-500"
-          accentColor="from-rose-500/10 to-red-950/10"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl">
-          <div className="border-b border-slate-800 pb-3 mb-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              Request Rate Velocity (Recent Packet Samples)
-            </h2>
-            <p className="text-[11px] text-slate-400">Comparing request rate vs failed auth attempts</p>
+      {/* Visual Telemetry Split */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Packet Velocity Chart */}
+        <div className="panel p-5 lg:col-span-2 flex flex-col justify-between">
+          <div className="border-b border-slate-800/80 pb-3 mb-4">
+            <h2 className="text-sm font-semibold text-white">Request Velocity &amp; Auth Failures</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Throughput request rate vs failed credential challenges across recent packets</p>
           </div>
 
-          {packetData.length === 0 ? (
-            <div className="h-[210px] flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-              No packet traffic samples recorded.
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={210} minWidth={0}>
-              <BarChart data={packetData}>
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }}
-                  formatter={(val: any, name: any) => [Number(val), name === 'rate' ? 'Req / sec' : 'Failed Attempts']}
-                />
-                <Bar dataKey="rate" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="failed" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <div className="w-full h-56 min-w-0">
+            {packetData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-800 rounded">
+                No packet samples recorded in this window.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <BarChart data={packetData}>
+                  <XAxis
+                    dataKey="name"
+                    stroke="#334155"
+                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
+                    axisLine={{ stroke: '#1e293b' }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="#334155"
+                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
+                    axisLine={{ stroke: '#1e293b' }}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090e18',
+                      border: '1px solid #1e293b',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    }}
+                    formatter={(val: any, name: any) => [Number(val), name === 'rate' ? 'Rate (req/s)' : 'Auth Failures']}
+                  />
+                  <Bar dataKey="rate" name="rate" fill="#0284c7" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="failed" name="failed" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl flex flex-col justify-between">
+        {/* Threat IP Reputation Ledger */}
+        <div className="panel p-5 flex flex-col justify-between">
           <div>
-            <div className="border-b border-slate-800 pb-3 mb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                Suspicious Threat IP Database
-              </h3>
-              <p className="text-[11px] text-slate-400">Active foreign & botnet IP addresses</p>
+            <div className="border-b border-slate-800/80 pb-3 mb-3">
+              <h3 className="text-sm font-semibold text-white">Suspicious IP Ledger</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Blacklisted &amp; proxy/botnet nodes</p>
             </div>
 
-            <div className="space-y-2 max-h-[190px] overflow-y-auto">
+            <div className="space-y-2 max-h-52 overflow-y-auto">
               {suspiciousIps.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-                  <ShieldCheck className="w-6 h-6 text-emerald-400/60 mx-auto mb-1.5" />
-                  No blacklisted IPs detected. Threat database clear.
+                <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-800 rounded">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
+                  Threat database clear. Zero blacklisted IPs.
                 </div>
               ) : (
                 suspiciousIps.map((ip, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 font-mono text-xs">
-                    <span className="text-cyan-400 font-bold">{ip}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                      Flagged IP
-                    </span>
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 rounded bg-slate-950/70 border border-slate-800/80 text-xs font-mono"
+                  >
+                    <span className="text-cyan-400 font-semibold">{ip}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(ip)}
+                      title="Copy IP"
+                      className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+                    >
+                      {copiedIp === ip ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    </button>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between mt-4">
-            <div className="flex items-center gap-1.5">
-              <Radio className={`w-3.5 h-3.5 ${mlConnected ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
-              <span>{mlConnected ? 'ML DPI Engine Online' : 'DPI Engine in Fallback Mode'}</span>
-            </div>
-            <span className="text-[10px] font-mono text-slate-500">v1.0.0</span>
+          <div className="pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex items-center justify-between mt-3">
+            <span>DPI Filter: Strict</span>
+            <span className="text-slate-500">Node ID: DPI-01</span>
           </div>
         </div>
       </div>
 
-      <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      {/* Packet Stream Table */}
+      <div className="panel overflow-hidden">
+        {/* Table Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 p-4 bg-slate-900/30">
           <div>
-            <h2 className="text-sm font-bold text-white">Inspected Layer-7 Packet Stream</h2>
-            <p className="text-[11px] text-slate-400">Click any packet event row to inspect payload metadata</p>
+            <h2 className="text-sm font-semibold text-white">Inspected Layer-7 Packet Stream</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Click any packet event to inspect header and payload attributes</p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -199,18 +232,20 @@ export default function NetworkPage() {
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                placeholder="Filter by IP / Endpoint…"
+                placeholder="Filter IP or Endpoint…"
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="h-8 w-44 rounded-lg border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-slate-200 outline-none focus:border-cyan-500"
+                className="h-8 w-44 rounded border border-slate-800 bg-slate-950 pl-8 pr-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-700"
               />
             </div>
+
             <button
+              type="button"
               onClick={() => setSuspiciousOnly(!suspiciousOnly)}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-colors ${
+              className={`h-8 px-2.5 rounded text-xs font-mono font-medium border flex items-center gap-1.5 transition-colors ${
                 suspiciousOnly
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                  ? 'bg-rose-950/60 text-rose-300 border-rose-800/80'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
               }`}
             >
               <Filter className="w-3 h-3" />
@@ -219,96 +254,110 @@ export default function NetworkPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
-                <th className="p-3">Time</th>
-                <th className="p-3">Source IP</th>
-                <th className="p-3">Destination</th>
-                <th className="p-3">Protocol</th>
-                <th className="p-3">Packet Size</th>
-                <th className="p-3">Req Rate</th>
-                <th className="p-3">Failed Req</th>
-                <th className="p-3">Endpoint</th>
-                <th className="p-3">Threat Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-500">
-                    Loading packet stream...
-                  </td>
+        {/* Table Content */}
+        {loading && !events.length ? (
+          <SkeletonTable rows={8} cols={8} />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800/80 text-slate-400 uppercase font-mono text-[10px] tracking-wider bg-slate-950/60">
+                  <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3">Source IP</th>
+                  <th className="px-4 py-3">Destination</th>
+                  <th className="px-4 py-3">Protocol</th>
+                  <th className="px-4 py-3">Payload Size</th>
+                  <th className="px-4 py-3">Req Rate</th>
+                  <th className="px-4 py-3">Auth Retries</th>
+                  <th className="px-4 py-3">Endpoint Target</th>
+                  <th className="px-4 py-3">Threat Flag</th>
                 </tr>
-              ) : filteredEvents.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-8 text-slate-500">
-                    No packet events match the current filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredEvents.map((ev) => (
-                  <tr
-                    key={ev.id}
-                    onClick={() => setSelectedEvent(ev)}
-                    className="cursor-pointer hover:bg-cyan-950/20 transition-colors"
-                  >
-                    <td className="p-3 text-slate-400 font-mono">{formatTimestamp(ev.timestamp)}</td>
-                    <td className="p-3 font-mono text-cyan-400 font-bold">{ev.src_ip}</td>
-                    <td className="p-3 font-mono text-slate-300">{ev.dst_ip}</td>
-                    <td className="p-3 font-bold text-slate-200">{ev.protocol || 'HTTPS'}</td>
-                    <td className="p-3 font-mono text-slate-400">{ev.packet_size.toFixed(0)} B</td>
-                    <td className="p-3 font-mono font-bold text-slate-200">{ev.request_rate.toFixed(1)} req/s</td>
-                    <td className="p-3 font-mono text-slate-300">{ev.failed_request_count}</td>
-                    <td className="p-3 text-slate-400 max-w-[160px] truncate">{ev.endpoint || '/api/v1/payments/create'}</td>
-                    <td className="p-3">
-                      {ev.is_suspicious ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                          SUSPICIOUS
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                          NORMAL
-                        </span>
-                      )}
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {filteredEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-10 text-slate-500">
+                      No packet events match the current filter.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filteredEvents.map((ev) => (
+                    <tr
+                      key={ev.id}
+                      onClick={() => setSelectedEvent(ev)}
+                      className="cursor-pointer hover:bg-slate-850/60 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                        {formatTimestamp(ev.timestamp)}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-cyan-400 font-semibold">{ev.src_ip}</td>
+                      <td className="px-4 py-3 font-mono text-slate-300">{ev.dst_ip}</td>
+                      <td className="px-4 py-3 font-mono text-slate-300 font-semibold">{ev.protocol || 'HTTPS'}</td>
+                      <td className="px-4 py-3 font-mono text-slate-400">{ev.packet_size.toFixed(0)} B</td>
+                      <td className="px-4 py-3 font-mono text-slate-200">{ev.request_rate.toFixed(1)} req/s</td>
+                      <td className="px-4 py-3 font-mono text-slate-300">{ev.failed_request_count}</td>
+                      <td className="px-4 py-3 text-slate-400 font-mono max-w-[160px] truncate">{ev.endpoint || '/api/v1/payments'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
+                            ev.is_suspicious
+                              ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                              : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/50'
+                          }`}
+                        >
+                          {ev.is_suspicious ? 'ANOMALOUS' : 'NORMAL'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
+      {/* DPI Packet Inspector Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="panel bg-slate-900 w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-start border-b border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-mono text-cyan-400 uppercase">DPI PACKET INSPECTOR</span>
-                <h3 className="text-sm font-bold text-white mt-1">Source: {selectedEvent.src_ip}</h3>
+                <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider block">
+                  Wireshark / L7 Packet Forensic Inspector
+                </span>
+                <h3 className="text-sm font-bold text-white mt-1">Source Node: {selectedEvent.src_ip}</h3>
               </div>
-              <button onClick={() => setSelectedEvent(null)} className="text-slate-400 hover:text-white">
-                ✕
+              <button
+                type="button"
+                onClick={() => setSelectedEvent(null)}
+                className="text-slate-400 hover:text-white p-1 rounded"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-950 p-4 rounded-xl border border-slate-800">
-              <div>Destination IP: <span className="text-white">{selectedEvent.dst_ip}</span></div>
-              <div>Protocol: <span className="text-cyan-400">{selectedEvent.protocol}</span></div>
-              <div>Packet Size: <span className="text-slate-300">{selectedEvent.packet_size} Bytes</span></div>
-              <div>Packet Count: <span className="text-slate-300">{selectedEvent.packet_count}</span></div>
-              <div>Request Rate: <span className="text-amber-400">{selectedEvent.request_rate} req/s</span></div>
-              <div>Failed Auth: <span className="text-rose-400">{selectedEvent.failed_request_count}</span></div>
-              <div>Endpoint: <span className="text-slate-300">{selectedEvent.endpoint}</span></div>
-              <div>Threat Flag: <span className={selectedEvent.is_suspicious ? 'text-rose-400 font-bold' : 'text-emerald-400'}>{selectedEvent.is_suspicious ? 'YES' : 'NO'}</span></div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-950 p-3.5 rounded border border-slate-800">
+              <div>Destination IP: <span className="text-white block font-semibold">{selectedEvent.dst_ip}</span></div>
+              <div>Protocol: <span className="text-cyan-400 block font-semibold">{selectedEvent.protocol}</span></div>
+              <div>Packet Size: <span className="text-slate-300 block">{selectedEvent.packet_size} Bytes</span></div>
+              <div>Packet Count: <span className="text-slate-300 block">{selectedEvent.packet_count}</span></div>
+              <div>Request Rate: <span className="text-amber-400 block">{selectedEvent.request_rate} req/s</span></div>
+              <div>Auth Failures: <span className="text-rose-400 block">{selectedEvent.failed_request_count}</span></div>
+              <div className="col-span-2">Target Endpoint: <span className="text-slate-200 block truncate">{selectedEvent.endpoint}</span></div>
+              <div className="col-span-2 pt-1 border-t border-slate-800/80">
+                Threat Status:{' '}
+                <span className={selectedEvent.is_suspicious ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
+                  {selectedEvent.is_suspicious ? 'ANOMALY DETECTED (HIGH RISK)' : 'BENIGN TRAFFIC'}
+                </span>
+              </div>
             </div>
 
             <div className="flex justify-end pt-2">
               <button
+                type="button"
                 onClick={() => setSelectedEvent(null)}
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
+                className="px-4 py-1.5 text-xs font-medium rounded bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors"
               >
                 Close Inspector
               </button>

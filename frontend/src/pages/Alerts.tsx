@@ -1,25 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  CheckCircle,
-  ArrowUpRight,
-  Search,
-  Clock,
-  X,
-  ShieldAlert,
-  RefreshCw,
-  ExternalLink,
-  MessageSquare,
-  Save,
+  Search, X, RefreshCw, ExternalLink, MessageSquare, Save
 } from 'lucide-react';
 import { alertsApi } from '../services/api';
 import type { AlertListResponse, Alert } from '../types';
-import { formatTimestamp, formatDate, truncateId } from '../utils';
+import { formatTimestamp, formatDate } from '../utils';
+import { PageHeader } from '../components/ui/PageHeader';
 import { SeverityBadge } from '../components/ui/SeverityBadge';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SkeletonTable } from '../components/ui/SkeletonLoader';
 
 const SEVERITIES = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
-const STATUSES = ['ALL', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'ESCALATED'];
+const STATUSES = ['ALL', 'OPEN', 'ACKNOWLEDGED', 'ESCALATED', 'RESOLVED'];
 
 export default function Alerts() {
   const navigate = useNavigate();
@@ -31,6 +24,7 @@ export default function Alerts() {
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [notesInput, setNotesInput] = useState<string>('');
   const [savingNotes, setSavingNotes] = useState<boolean>(false);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -66,6 +60,7 @@ export default function Alerts() {
 
   const handleAcknowledge = async (id: string, event?: React.MouseEvent) => {
     event?.stopPropagation();
+    setActionInProgress(id);
     try {
       await alertsApi.acknowledge(id);
       await fetchAlerts();
@@ -74,11 +69,14 @@ export default function Alerts() {
       }
     } catch {
       alert('Failed to acknowledge alert');
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleResolve = async (id: string, event?: React.MouseEvent) => {
     event?.stopPropagation();
+    setActionInProgress(id);
     try {
       await alertsApi.resolve(id);
       await fetchAlerts();
@@ -87,11 +85,14 @@ export default function Alerts() {
       }
     } catch {
       alert('Failed to resolve alert');
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleEscalate = async (id: string, event?: React.MouseEvent) => {
     event?.stopPropagation();
+    setActionInProgress(id);
     try {
       await alertsApi.escalate(id);
       await fetchAlerts();
@@ -100,6 +101,8 @@ export default function Alerts() {
       }
     } catch {
       alert('Failed to escalate alert');
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -119,367 +122,357 @@ export default function Alerts() {
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-
     if (!query) return data?.items ?? [];
 
     return (data?.items ?? []).filter((item) => {
       return (
         item.title.toLowerCase().includes(query) ||
         item.message.toLowerCase().includes(query) ||
-        Boolean(
-          item.transaction_id &&
-            item.transaction_id.toLowerCase().includes(query)
-        )
+        Boolean(item.transaction_id && item.transaction_id.toLowerCase().includes(query))
       );
     });
   }, [data?.items, searchQuery]);
 
   return (
-    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-xl backdrop-blur-md sm:p-5">
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-400" />
-              <h1 className="break-words text-lg font-black tracking-tight text-white sm:text-xl">
-                Security Operations Center Alerts
-              </h1>
-              <span className="rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[9px] font-mono font-bold uppercase text-rose-400">
-                {data?.total ?? 0} Signals
-              </span>
-            </div>
-            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-              Real-time fraud incident triage, severity escalation &amp; analyst
-              response workflow.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        category="Incident Response"
+        title="Security Incidents & Alerts"
+        subtitle="Prioritized threat vectors, rule violations, ML anomaly flags, and analyst triage operations"
+        badge={
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
+            {data?.total ?? 0} Recorded Signals
+          </span>
+        }
+      >
+        <button
+          type="button"
+          onClick={fetchAlerts}
+          disabled={loading}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 border border-slate-800 px-3 text-xs font-medium text-slate-300 hover:text-white transition-colors"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Signals</span>
+        </button>
+      </PageHeader>
 
-          <button
-            type="button"
-            onClick={fetchAlerts}
-            disabled={loading}
-            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-500/40 hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 shadow-xl backdrop-blur-md sm:p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="flex min-w-0 flex-wrap gap-1.5">
-            {STATUSES.map((status) => (
+      {/* Filter & Triage Toolbar */}
+      <div className="panel p-4 space-y-3">
+        {/* Top: Status Tabs + Search */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
+            {STATUSES.map((st) => (
               <button
-                key={status}
+                key={st}
                 type="button"
-                onClick={() => setStatusFilter(status)}
-                className={`min-h-9 rounded-lg px-3 py-2 text-[10px] font-bold transition sm:text-xs ${
-                  statusFilter === status
-                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                    : 'border border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors ${
+                  statusFilter === st
+                    ? 'bg-slate-800 text-white font-semibold border border-slate-700'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                 }`}
               >
-                {status === 'ALL' ? 'All Statuses' : status}
+                {st}
               </button>
             ))}
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-[25rem]">
-            <div className="relative min-w-0">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-              <input
-                type="search"
-                aria-label="Search alerts"
-                placeholder="Search title, message or Tx ID…"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-9 w-full rounded-lg border border-slate-800 bg-slate-950 pl-9 pr-3 text-xs text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
-              />
-            </div>
-
-            <select
-              aria-label="Filter by severity"
-              value={severity}
-              onChange={(event) => setSeverity(event.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 text-xs text-slate-200 outline-none focus:border-cyan-500/60 sm:w-auto"
-            >
-              {SEVERITIES.map((item) => (
-                <option key={item} value={item}>
-                  {item === 'ALL' ? 'All Severities' : item}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section className="min-w-0 space-y-3">
-        {loading ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 py-16 text-center text-slate-400">
-            <Clock className="mx-auto mb-2 h-6 w-6 animate-spin text-cyan-400" />
-            <p className="text-xs">Loading SOC alert stream…</p>
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <EmptyState
-            title="No Alerts Found"
-            description="No security alerts match the selected severity and status filters."
-          />
-        ) : (
-          filteredItems.map((alert) => {
-            const isResolved =
-              alert.status === 'RESOLVED' || Boolean(alert.is_resolved);
-            const isEscalated = alert.status === 'ESCALATED';
-            const isAcknowledged = alert.status === 'ACKNOWLEDGED';
-
-            return (
-              <article
-                key={alert.id}
-                onClick={() => setSelectedAlert(alert)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    setSelectedAlert(alert);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className={`group min-w-0 rounded-2xl border p-4 shadow-lg transition sm:p-5 ${
-                  isEscalated
-                    ? 'border-rose-500/40 bg-rose-950/10'
-                    : isResolved
-                      ? 'border-slate-800 bg-slate-900/40 opacity-75'
-                      : 'border-slate-800 bg-slate-900/90'
-                } cursor-pointer hover:border-cyan-500/40`}
-              >
-                <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="mt-0.5 shrink-0">
-                      <SeverityBadge severity={alert.severity} />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 break-words text-sm font-bold text-white transition-colors group-hover:text-cyan-300">
-                          {alert.title}
-                        </h3>
-
-                        {alert.transaction_id && (
-                          <span className="max-w-full truncate rounded-md border border-slate-800 bg-slate-950 px-2 py-0.5 text-[9px] font-mono text-cyan-400">
-                            Tx: {truncateId(alert.transaction_id, 16)}
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="mt-1 break-words text-xs leading-5 text-slate-300">
-                        {alert.message}
-                      </p>
-
-                      <div className="mt-2 grid gap-1 text-[9px] font-mono text-slate-500 sm:grid-cols-2 xl:flex xl:flex-wrap xl:gap-x-5">
-                        <span>
-                          Created: {formatDate(alert.created_at)}{' '}
-                          {formatTimestamp(alert.created_at)}
-                        </span>
-                        <span>
-                          Assigned:{' '}
-                          <strong className="text-slate-400">
-                            {alert.assigned_to || 'SOC Analyst'}
-                          </strong>
-                        </span>
-                        <span className="text-cyan-400">
-                          Status: {alert.status || 'OPEN'}
-                        </span>
-                        {alert.analyst_notes && (
-                          <span className="text-amber-400 flex items-center gap-1">
-                            <MessageSquare className="w-2.5 h-2.5" /> Note Attached
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex w-full flex-wrap gap-2 xl:w-auto xl:justify-end">
-                    {!isAcknowledged && !isResolved && (
-                      <button
-                        type="button"
-                        onClick={(event) => handleAcknowledge(alert.id, event)}
-                        className="min-h-9 flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] font-bold text-amber-400 transition hover:bg-amber-500/20 sm:flex-none sm:text-xs"
-                      >
-                        Acknowledge
-                      </button>
-                    )}
-
-                    {!isEscalated && !isResolved && (
-                      <button
-                        type="button"
-                        onClick={(event) => handleEscalate(alert.id, event)}
-                        className="inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[10px] font-bold text-rose-400 transition hover:bg-rose-500/20 sm:flex-none sm:text-xs"
-                      >
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                        Escalate
-                      </button>
-                    )}
-
-                    {!isResolved && (
-                      <button
-                        type="button"
-                        onClick={(event) => handleResolve(alert.id, event)}
-                        className="inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[10px] font-bold text-emerald-400 transition hover:bg-emerald-500/20 sm:flex-none sm:text-xs"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Resolve
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </section>
-
-      {/* Detail Dialog */}
-      {selectedAlert && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-md sm:items-center sm:p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedAlert(null);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="alert-dialog-title"
-            className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl sm:max-w-2xl sm:rounded-2xl sm:p-6 space-y-4"
-          >
-            <div className="sticky top-0 z-10 -mx-4 -mt-4 flex items-start justify-between gap-3 border-b border-slate-800 bg-slate-900/95 p-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:p-6">
-              <div className="min-w-0">
-                <SeverityBadge severity={selectedAlert.severity} />
-                <h3
-                  id="alert-dialog-title"
-                  className="mt-2 break-words text-base font-bold text-white sm:text-lg"
-                >
-                  {selectedAlert.title}
-                </h3>
-              </div>
-
+          {/* Search Box */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search by title, payload or Tx ID…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-full rounded border border-slate-800 bg-slate-950 pl-8 pr-7 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-700"
+            />
+            {searchQuery && (
               <button
                 type="button"
-                aria-label="Close alert details"
-                onClick={() => setSelectedAlert(null)}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               >
-                <X className="h-4 w-4" />
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom: Severity Sub-filter Bar */}
+        <div className="pt-2.5 border-t border-slate-800/80 flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-mono uppercase text-slate-500 mr-1">Severity:</span>
+          {SEVERITIES.map((sev) => (
+            <button
+              key={sev}
+              type="button"
+              onClick={() => setSeverity(sev)}
+              className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                severity === sev
+                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {sev}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Alerts Table */}
+      {loading && !data ? (
+        <SkeletonTable rows={8} cols={6} />
+      ) : !filteredItems.length ? (
+        <EmptyState
+          title="No Security Alerts Found"
+          description="There are currently no active incidents matching your severity and status filters."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSeverity('ALL');
+            setStatusFilter('ALL');
+            setSearchQuery('');
+          }}
+        />
+      ) : (
+        <div className="panel overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800/80 text-slate-400 uppercase font-mono text-[10px] tracking-wider bg-slate-950/60">
+                  <th className="px-4 py-3">Severity</th>
+                  <th className="px-4 py-3">Incident Summary</th>
+                  <th className="px-4 py-3">Associated Tx</th>
+                  <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3">Triage Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {filteredItems.map((al) => {
+                  const isAck = al.status === 'ACKNOWLEDGED';
+                  const isRes = al.status === 'RESOLVED';
+                  const isEsc = al.status === 'ESCALATED';
+
+                  return (
+                    <tr
+                      key={al.id}
+                      onClick={() => setSelectedAlert(al)}
+                      className="cursor-pointer hover:bg-slate-850/60 transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <SeverityBadge severity={al.severity} size="sm" />
+                      </td>
+                      <td className="px-4 py-3 max-w-sm">
+                        <div className="font-semibold text-slate-100 truncate">{al.title}</div>
+                        <div className="text-[11px] text-slate-400 truncate mt-0.5">{al.message}</div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-cyan-400 text-xs">
+                        {al.transaction_id ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/transactions/${al.transaction_id}`);
+                            }}
+                            className="hover:underline flex items-center gap-1"
+                          >
+                            <span>{al.transaction_id}</span>
+                            <ExternalLink className="w-3 h-3 text-slate-500" />
+                          </button>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                        {formatTimestamp(al.created_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
+                            isRes
+                              ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800/60'
+                              : isEsc
+                              ? 'bg-rose-950/50 text-rose-400 border border-rose-800/60'
+                              : isAck
+                              ? 'bg-amber-950/50 text-amber-400 border border-amber-800/60'
+                              : 'bg-slate-900 text-slate-300 border border-slate-800'
+                          }`}
+                        >
+                          {al.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          {!isAck && !isRes && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleAcknowledge(al.id, e)}
+                              disabled={actionInProgress === al.id}
+                              title="Acknowledge alert"
+                              className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[11px] font-mono text-amber-300 border border-slate-800 transition-colors"
+                            >
+                              Ack
+                            </button>
+                          )}
+                          {!isRes && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleResolve(al.id, e)}
+                              disabled={actionInProgress === al.id}
+                              title="Resolve alert"
+                              className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[11px] font-mono text-emerald-400 border border-slate-800 transition-colors"
+                            >
+                              Resolve
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAlert(al)}
+                            className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[11px] font-mono text-slate-400 hover:text-white border border-slate-800 transition-colors"
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Incident Detail / Triage Modal */}
+      {selectedAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="panel bg-slate-900 w-full max-w-xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
+                  Incident Triage Briefing
+                </span>
+                <h3 className="text-base font-bold text-white mt-0.5">{selectedAlert.title}</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <SeverityBadge severity={selectedAlert.severity} size="sm" />
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Status: <span className="text-white font-medium">{selectedAlert.status}</span>
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAlert(null)}
+                className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 pt-2 text-xs text-slate-300">
-              <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 sm:p-4">
-                <span className="mb-1 block text-[9px] font-mono uppercase tracking-wider text-slate-500 font-bold">
-                  Alert Evidence &amp; Signals
+            {/* Incident Payload */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] font-mono uppercase text-slate-500 block mb-1">
+                  Incident Description
                 </span>
-                <p className="break-words leading-6 text-slate-200">{selectedAlert.message}</p>
-              </div>
-
-              <div className="grid gap-2 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-[10px] font-mono sm:grid-cols-2 sm:p-4">
-                <div>
-                  Alert Type: <span className="text-white font-bold">{selectedAlert.alert_type}</span>
-                </div>
-                <div>
-                  Current Status: <span className="text-cyan-400 font-bold">{selectedAlert.status || 'OPEN'}</span>
-                </div>
-                <div>
-                  Created: <span className="text-slate-400">{formatTimestamp(selectedAlert.created_at)}</span>
-                </div>
-                <div>
-                  Assigned Analyst: <span className="text-slate-300">{selectedAlert.assigned_to || 'SOC Analyst'}</span>
+                <div className="p-3 rounded bg-slate-950/70 border border-slate-800 text-slate-300 leading-relaxed">
+                  {selectedAlert.message}
                 </div>
               </div>
 
-              {/* Related Transaction Link */}
               {selectedAlert.transaction_id && (
-                <div className="p-3.5 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 rounded bg-slate-950/50 border border-slate-800">
                   <div>
-                    <span className="text-[10px] font-mono uppercase text-cyan-400 font-bold block">Related Ingested Transaction</span>
-                    <span className="font-mono text-xs text-white font-bold">{selectedAlert.transaction_id}</span>
+                    <span className="text-[10px] font-mono uppercase text-slate-500 block">Target Transaction</span>
+                    <span className="font-mono text-cyan-400 font-semibold">{selectedAlert.transaction_id}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => {
-                      navigate(`/transactions/${selectedAlert.transaction_id}`);
                       setSelectedAlert(null);
+                      navigate(`/transactions/${selectedAlert.transaction_id}`);
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded bg-slate-850 hover:bg-slate-800 text-slate-200 text-xs font-medium border border-slate-700 flex items-center gap-1.5"
                   >
-                    Investigate <ExternalLink className="w-3.5 h-3.5" />
+                    Investigate Dossier <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Analyst Notes */}
-              <div className="space-y-2 pt-2">
-                <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-cyan-400" /> Analyst Incident Triage Notes
-                </label>
+              {/* Analyst Notes Editor */}
+              <div className="space-y-1.5 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-mono uppercase text-slate-400 flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3 text-slate-500" /> Analyst Case Notes
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">Persisted in audit log</span>
+                </div>
                 <textarea
                   rows={3}
+                  placeholder="Record investigation notes, IP attribution observations, or escalation rationales…"
                   value={notesInput}
                   onChange={(e) => setNotesInput(e.target.value)}
-                  placeholder="Record rationale, forensic observations, or escalated action steps..."
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-cyan-500 resize-none"
+                  className="w-full rounded border border-slate-800 bg-slate-950 p-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-700 font-sans"
                 />
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={handleSaveNotes}
                     disabled={savingNotes}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-slate-700 disabled:opacity-50"
+                    className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
-                    <Save className="w-3.5 h-3.5" /> {savingNotes ? 'Saving...' : 'Save Note'}
+                    <Save className="w-3 h-3" />
+                    <span>{savingNotes ? 'Saving Notes…' : 'Save Notes'}</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Modal action bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
-              <div className="flex gap-2">
-                {selectedAlert.status !== 'ACKNOWLEDGED' && !selectedAlert.is_resolved && (
+            {/* Modal Triage Actions Footer */}
+            <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[10px] font-mono text-slate-500">
+                Recorded {formatDate(selectedAlert.created_at)}
+              </span>
+
+              <div className="flex items-center gap-2">
+                {selectedAlert.status !== 'ACKNOWLEDGED' && selectedAlert.status !== 'RESOLVED' && (
                   <button
                     type="button"
-                    onClick={(e) => handleAcknowledge(selectedAlert.id, e)}
-                    className="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-bold transition-colors"
+                    onClick={() => handleAcknowledge(selectedAlert.id)}
+                    className="px-3 py-1.5 rounded bg-amber-950/60 hover:bg-amber-950/80 text-amber-300 border border-amber-800/80 text-xs font-medium"
                   >
                     Acknowledge
                   </button>
                 )}
-                {selectedAlert.status !== 'ESCALATED' && !selectedAlert.is_resolved && (
+                {selectedAlert.status !== 'ESCALATED' && selectedAlert.status !== 'RESOLVED' && (
                   <button
                     type="button"
-                    onClick={(e) => handleEscalate(selectedAlert.id, e)}
-                    className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-colors flex items-center gap-1"
+                    onClick={() => handleEscalate(selectedAlert.id)}
+                    className="px-3 py-1.5 rounded bg-rose-950/60 hover:bg-rose-950/80 text-rose-300 border border-rose-800/80 text-xs font-medium"
                   >
-                    <ArrowUpRight className="w-3.5 h-3.5" /> Escalate
+                    Escalate to Tier-2
                   </button>
                 )}
-                {!selectedAlert.is_resolved && (
+                {selectedAlert.status !== 'RESOLVED' && (
                   <button
                     type="button"
-                    onClick={(e) => handleResolve(selectedAlert.id, e)}
-                    className="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs font-bold transition-colors flex items-center gap-1"
+                    onClick={() => handleResolve(selectedAlert.id)}
+                    className="px-3 py-1.5 rounded bg-emerald-950/60 hover:bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 text-xs font-medium"
                   >
-                    <CheckCircle className="w-3.5 h-3.5" /> Resolve
+                    Mark Resolved
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedAlert(null)}
+                  className="px-3 py-1.5 rounded bg-slate-800 text-slate-300 text-xs font-medium"
+                >
+                  Close
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedAlert(null)}
-                className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

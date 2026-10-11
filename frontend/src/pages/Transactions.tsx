@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Filter, Eye, Clock, Download, ChevronLeft, ChevronRight, X
+  Search, ChevronLeft, ChevronRight, X, Download, SlidersHorizontal, ArrowRight
 } from 'lucide-react';
 import { transactionsApi } from '../services/api';
 import type { TransactionListResponse } from '../types';
-import { formatCurrency, formatTimestamp, truncateId } from '../utils';
+import { formatCurrency, formatTimestamp } from '../utils';
+import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 import { RiskBadge } from '../components/ui/RiskBadge';
+import { SkeletonTable } from '../components/ui/SkeletonLoader';
 
 const DECISIONS = ['ALL', 'ALLOW', 'MONITOR', 'STEP-UP', 'BLOCK'];
 
 export default function Transactions() {
   const [data, setData] = useState<TransactionListResponse | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(50);
+  const [pageSize] = useState(25);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const navigate = useNavigate();
 
   const [decision, setDecision] = useState('ALL');
@@ -49,8 +52,6 @@ export default function Transactions() {
 
   useEffect(() => {
     fetchTransactions();
-    const interval = setInterval(fetchTransactions, 10000);
-    return () => clearInterval(interval);
   }, [fetchTransactions]);
 
   const handleApplyFilters = (e: React.FormEvent) => {
@@ -90,310 +91,272 @@ export default function Transactions() {
   const totalPages = Math.ceil((data?.total ?? 0) / pageSize) || 1;
   const startItem = (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, data?.total ?? 0);
-
   const hasActiveFilters = decision !== 'ALL' || searchQuery || minAmount || maxAmount || fromDate || toDate;
 
   return (
-    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6">
-
-      {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black text-white tracking-tight">Transaction Investigation</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              {data?.total?.toLocaleString() ?? 0} Record Items
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">Audit, filter, and inspect payment transactions across rule sets & ML features</p>
-        </div>
-
+    <div className="space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        category="Investigation"
+        title="Transactions Audit Log"
+        subtitle="Forensic payment transaction records, multi-vector anomaly scores, and SOC policy decisions"
+        badge={
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
+            {data?.total?.toLocaleString() ?? 0} Recorded
+          </span>
+        }
+      >
         <button
           type="button"
           onClick={handleExportCsv}
           disabled={exporting || (data?.total ?? 0) === 0}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center gap-2 border border-slate-700 self-start md:self-auto disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 border border-slate-800 px-3 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition-colors disabled:opacity-50"
         >
-          <Download className={`w-3.5 h-3.5 ${exporting ? 'animate-bounce' : ''}`} />
-          {exporting ? 'Exporting CSV…' : 'Export Filtered CSV'}
+          <Download className="h-3.5 w-3.5 text-slate-400" />
+          <span>{exporting ? 'Generating CSV…' : 'Export Filtered CSV'}</span>
         </button>
-      </div>
+      </PageHeader>
 
-      {/* Multi-param search form */}
-      <form onSubmit={handleApplyFilters} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Multi-Param Audit Search</h3>
+      {/* Investigation Filter Panel */}
+      <div className="panel p-4 space-y-4">
+        {/* Primary Filter Row */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Decision Pill Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
+            {DECISIONS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  setDecision(d);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors ${
+                  decision === d
+                    ? 'bg-slate-800 text-white font-semibold border border-slate-700'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
           </div>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="text-xs text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1"
-            >
-              <X className="w-3.5 h-3.5" /> Reset Filters
-            </button>
-          )}
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-slate-400">Search Tx ID / User / IP</label>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-500" />
+          {/* Quick Search & Advanced Toggle */}
+          <form onSubmit={handleApplyFilters} className="flex items-center gap-2">
+            <div className="relative w-full md:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                placeholder="TXN_..., USER_..., 192.168..."
+                placeholder="Search Tx, User, IP…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
+                className="h-8 w-full rounded border border-slate-800 bg-slate-950 pl-8 pr-7 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-700"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-slate-400">Risk Decision</label>
-            <select
-              value={decision}
-              onChange={(e) => setDecision(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
+            <button
+              type="button"
+              onClick={() => setAdvancedFiltersOpen(!advancedFiltersOpen)}
+              className={`h-8 px-2.5 rounded border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                advancedFiltersOpen || minAmount || maxAmount || fromDate || toDate
+                  ? 'bg-slate-800 text-cyan-400 border-slate-700'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              }`}
             >
-              {DECISIONS.map((d) => (
-                <option key={d} value={d}>
-                  {d === 'ALL' ? 'All Risk Decisions' : d}
-                </option>
-              ))}
-            </select>
-          </div>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Filters</span>
+            </button>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-slate-400">Amount Min - Max (INR)</label>
-            <div className="flex gap-2">
+            <button
+              type="submit"
+              className="h-8 px-3 rounded bg-primary hover:bg-primary-hover text-white text-xs font-medium transition-colors"
+            >
+              Apply
+            </button>
+          </form>
+        </div>
+
+        {/* Expandable Advanced Filters */}
+        {advancedFiltersOpen && (
+          <form onSubmit={handleApplyFilters} className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div>
+              <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Min Amount ($)</label>
               <input
                 type="number"
-                placeholder="Min ₹"
+                placeholder="0.00"
                 value={minAmount}
                 onChange={(e) => setMinAmount(e.target.value)}
-                className="w-1/2 px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
-              />
-              <input
-                type="number"
-                placeholder="Max ₹"
-                value={maxAmount}
-                onChange={(e) => setMaxAmount(e.target.value)}
-                className="w-1/2 px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
+                className="h-8 w-full rounded border border-slate-800 bg-slate-950 px-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-700"
               />
             </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-slate-400">Date Bound (From - To)</label>
-            <div className="flex gap-2">
+            <div>
+              <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Max Amount ($)</label>
+              <input
+                type="number"
+                placeholder="50000.00"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="h-8 w-full rounded border border-slate-800 bg-slate-950 px-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-700"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">From Date</label>
               <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-1/2 px-2 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500 text-[11px]"
+                className="h-8 w-full rounded border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 focus:outline-none focus:border-slate-700"
               />
+            </div>
+            <div>
+              <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">To Date</label>
               <input
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-1/2 px-2 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500 text-[11px]"
+                className="h-8 w-full rounded border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 focus:outline-none focus:border-slate-700"
               />
             </div>
-          </div>
-        </div>
 
-        <div className="flex justify-between items-center pt-2">
-          {/* Filter badges */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            {decision !== 'ALL' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] font-mono">
-                Decision: {decision}
-                <X className="w-2.5 h-2.5 cursor-pointer" onClick={() => setDecision('ALL')} />
-              </span>
-            )}
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-mono">
-                Query: {searchQuery}
-                <X className="w-2.5 h-2.5 cursor-pointer" onClick={() => setSearchQuery('')} />
-              </span>
-            )}
-            {(minAmount || maxAmount) && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-mono">
-                ₹{minAmount || '0'} - ₹{maxAmount || '∞'}
-                <X className="w-2.5 h-2.5 cursor-pointer" onClick={() => { setMinAmount(''); setMaxAmount(''); }} />
-              </span>
-            )}
-          </div>
+            <div className="sm:col-span-2 lg:col-span-4 flex justify-end gap-2 pt-1">
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-3 py-1.5 rounded text-xs text-slate-400 hover:text-white"
+                >
+                  Reset All Filters
+                </button>
+              )}
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded bg-primary hover:bg-primary-hover text-white text-xs font-medium"
+              >
+                Update Results
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
-          <button
-            type="submit"
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors flex items-center gap-1.5 shrink-0"
-          >
-            <Filter className="w-3.5 h-3.5" /> Apply Filters
-          </button>
-        </div>
-      </form>
-
-      {/* Main Table */}
-      <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-xl overflow-hidden">
-
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
-                <th className="p-3.5">Transaction ID</th>
-                <th className="p-3.5">Timestamp</th>
-                <th className="p-3.5">Amount</th>
-                <th className="p-3.5">User ID</th>
-                <th className="p-3.5">IP Address</th>
-                <th className="p-3.5">Payment Method</th>
-                <th className="p-3.5">Failed Attempts</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5">Decision</th>
-                <th className="p-3.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-400">
-                    <Clock className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
-                    Loading database transactions...
-                  </td>
+      {/* Transactions Data Table */}
+      {loading && !data ? (
+        <SkeletonTable rows={10} cols={7} />
+      ) : !data?.items?.length ? (
+        <EmptyState
+          title="No Transactions Found"
+          description="No transaction records match the specified search query or filter parameters in the database."
+          actionLabel="Clear Filters"
+          onAction={handleResetFilters}
+        />
+      ) : (
+        <div className="panel overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800/80 text-slate-400 uppercase font-mono text-[10px] tracking-wider bg-slate-950/60">
+                  <th className="px-4 py-3">Transaction ID</th>
+                  <th className="px-4 py-3">User ID</th>
+                  <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 hidden md:table-cell">Client IP</th>
+                  <th className="px-4 py-3">Anomaly Score</th>
+                  <th className="px-4 py-3">Routing Decision</th>
+                  <th className="px-4 py-3 text-right">Action</th>
                 </tr>
-              ) : (data?.items ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-6">
-                    <EmptyState
-                      title="No Transactions Found"
-                      description="No payment records match your active query filters."
-                      onAction={handleResetFilters}
-                      actionLabel="Reset Search Parameters"
-                    />
-                  </td>
-                </tr>
-              ) : (
-                (data?.items ?? []).map((txn) => (
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {data.items.map((tx) => (
                   <tr
-                    key={txn.id}
-                    onClick={() => navigate(`/transactions/${txn.transaction_id}`)}
-                    className="cursor-pointer hover:bg-cyan-950/20 transition-colors"
+                    key={tx.id || tx.transaction_id}
+                    onClick={() => navigate(`/transactions/${tx.transaction_id || tx.id}`)}
+                    className="cursor-pointer hover:bg-slate-850/60 transition-colors"
                   >
-                    <td className="p-3.5 font-mono text-cyan-400 font-bold">
-                      {truncateId(txn.transaction_id, 16)}
+                    <td className="px-4 py-3 font-mono text-cyan-400 font-semibold truncate max-w-[140px]">
+                      {tx.transaction_id || tx.id}
                     </td>
-                    <td className="p-3.5 text-slate-400 font-mono">
-                      {formatTimestamp(txn.timestamp)}
+                    <td className="px-4 py-3 font-mono text-slate-300">
+                      {tx.user_id}
                     </td>
-                    <td className="p-3.5 font-bold text-white">
-                      {formatCurrency(txn.amount, txn.currency)}
+                    <td className="px-4 py-3 text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                      {formatTimestamp(tx.timestamp)}
                     </td>
-                    <td className="p-3.5 text-slate-300 font-mono">
-                      {txn.user_id}
+                    <td className="px-4 py-3 text-right font-mono font-bold text-white whitespace-nowrap">
+                      {formatCurrency(tx.amount, tx.currency)}
                     </td>
-                    <td className="p-3.5 text-slate-400 font-mono">
-                      {txn.ip_address || '—'}
+                    <td className="px-4 py-3 text-slate-400 font-mono hidden md:table-cell text-[11px]">
+                      {tx.ip_address || '—'}
                     </td>
-                    <td className="p-3.5 text-slate-300">
-                      {txn.payment_method || 'UPI'}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-slate-200">
+                          {Math.round(tx.risk_score || 0)}
+                        </span>
+                        <div className="w-12 h-1.5 rounded-full bg-slate-900 overflow-hidden border border-slate-800/80 hidden sm:block">
+                          <div
+                            className={`h-full ${(tx.risk_score || 0) > 80 ? 'bg-rose-500' : (tx.risk_score || 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.min(100, Math.max(4, tx.risk_score || 0))}%` }}
+                          />
+                        </div>
+                      </div>
                     </td>
-                    <td className="p-3.5">
-                      <span className={txn.failed_attempts > 3 ? 'text-rose-400 font-bold' : 'text-slate-300'}>
-                        {txn.failed_attempts}
-                      </span>
+                    <td className="px-4 py-3">
+                      <RiskBadge decision={tx.decision || 'ALLOW'} size="sm" />
                     </td>
-                    <td className="p-3.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                        txn.failed_attempts > 0 
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                      }`}>
-                        {txn.failed_attempts > 0 ? 'FAILED' : 'COMPLETED'}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <RiskBadge decision={txn.decision || 'ALLOW'} size="sm" />
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <span className="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 transition-colors inline-flex items-center">
-                        <Eye className="w-3.5 h-3.5" />
+                    <td className="px-4 py-3 text-right">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-cyan-400">
+                        Inspect <ArrowRight className="h-3 w-3" />
                       </span>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Mobile card list */}
-        <div className="md:hidden divide-y divide-slate-800">
-          {(data?.items ?? []).map((txn) => (
-            <div
-              key={txn.id}
-              onClick={() => navigate(`/transactions/${txn.transaction_id}`)}
-              className="p-4 space-y-2.5 active:bg-slate-800/40 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-cyan-400 font-bold text-xs">{truncateId(txn.transaction_id, 14)}</span>
-                <span className="font-bold text-white text-sm">{formatCurrency(txn.amount, txn.currency)}</span>
-              </div>
-              <div className="grid grid-cols-2 text-[11px] text-slate-400 font-mono gap-1">
-                <div>User: <span className="text-slate-200">{txn.user_id}</span></div>
-                <div>IP: <span className="text-slate-200">{txn.ip_address || '—'}</span></div>
-                <div>Time: <span className="text-slate-300">{formatTimestamp(txn.timestamp)}</span></div>
-                <div>Failed Auth: <span className="text-amber-400 font-bold">{txn.failed_attempts}</span></div>
-              </div>
-              <div className="flex justify-between items-center pt-1">
-                <RiskBadge decision={txn.decision || 'ALLOW'} size="sm" />
-                <span className="text-[10px] text-cyan-400 font-bold flex items-center gap-1">
-                  View Details →
-                </span>
-              </div>
+          {/* Table Footer & Pagination */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-800/80 p-3.5 bg-slate-950/60 text-xs">
+            <div className="text-slate-400 font-mono text-[11px]">
+              Showing <span className="text-white font-medium">{startItem}–{endItem}</span> of{' '}
+              <span className="text-white font-medium">{data.total.toLocaleString()}</span> records
             </div>
-          ))}
-        </div>
 
-        {/* Pagination footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-slate-800/80 bg-slate-950/40 gap-3 text-xs">
-          <div className="text-slate-400 font-mono text-[11px]">
-            {data?.total ? (
-              <>Showing <span className="text-white font-bold">{startItem}</span>–<span className="text-white font-bold">{endItem}</span> of <span className="text-white font-bold">{data.total.toLocaleString()}</span> items</>
-            ) : (
-              '0 records'
-            )}
-          </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                className="flex h-7 items-center gap-1 rounded bg-slate-900 border border-slate-800 px-2.5 text-xs font-medium text-slate-300 hover:text-white disabled:opacity-40 transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Previous
+              </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
-              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> Previous
-            </button>
+              <span className="font-mono text-[11px] text-slate-400 px-2">
+                Page {page} of {totalPages}
+              </span>
 
-            <span className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 font-mono font-bold text-cyan-400">
-              Page {page} of {totalPages}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || loading}
-              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              Next <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                className="flex h-7 items-center gap-1 rounded bg-slate-900 border border-slate-800 px-2.5 text-xs font-medium text-slate-300 hover:text-white disabled:opacity-40 transition-colors"
+              >
+                Next <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

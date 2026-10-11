@@ -8,11 +8,10 @@ interface KpiCardProps {
   subtext?: string;
   change?: number;
   changePeriod?: string;
-  icon: LucideIcon;
-  iconColor?: string;
-  accentColor?: string;
-  updatedAt?: string;
-  isLive?: boolean;
+  icon?: LucideIcon;
+  badge?: string;
+  badgeVariant?: 'neutral' | 'success' | 'warning' | 'danger';
+  className?: string;
 }
 
 export const KpiCard: React.FC<KpiCardProps> = ({
@@ -20,48 +19,64 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   value,
   subtext,
   change,
-  changePeriod = 'vs last hr',
+  changePeriod,
   icon: Icon,
-  iconColor = 'text-cyan-400',
-  accentColor = 'from-cyan-500/10 to-blue-600/5',
-  updatedAt = 'updated just now',
-  isLive = true,
+  badge,
+  badgeVariant = 'neutral',
+  className = '',
 }) => {
   const isPositive = change !== undefined && change > 0;
   const isNegative = change !== undefined && change < 0;
 
+  const badgeStyles = {
+    neutral: 'bg-slate-800 text-slate-300 border-slate-700',
+    success: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60',
+    warning: 'bg-amber-950/60 text-amber-400 border-amber-800/60',
+    danger: 'bg-rose-950/60 text-rose-400 border-rose-800/60',
+  }[badgeVariant];
+
   return (
-    <div className={`relative min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-br ${accentColor} bg-slate-900/80 p-3 shadow-lg backdrop-blur-md transition hover:border-slate-700 sm:p-4`}>
-      <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="min-w-0 truncate text-[9px] font-semibold uppercase tracking-wider text-slate-400 sm:text-[10px]">
+    <div className={`panel panel-hover p-4 sm:p-5 flex flex-col justify-between ${className}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-slate-400">
           {title}
         </span>
-        <div className={`shrink-0 rounded-lg border border-slate-700/50 bg-slate-800/80 p-1.5 ${iconColor} sm:p-2`}>
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+        <div className="flex items-center gap-1.5">
+          {badge && (
+            <span className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded border ${badgeStyles}`}>
+              {badge}
+            </span>
+          )}
+          {Icon && (
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900 border border-slate-800 text-slate-400">
+              <Icon className="h-3.5 w-3.5" />
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-2 flex min-w-0 items-baseline justify-between gap-2 sm:mt-3">
-        <div className="min-w-0 truncate text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+      <div className="my-2.5 flex items-baseline justify-between gap-2">
+        <div className="text-xl sm:text-2xl font-bold tracking-tight text-white font-mono tabular-nums">
           {value}
         </div>
         {change !== undefined && (
-          <div className={`inline-flex shrink-0 items-center gap-0.5 text-[10px] font-bold ${
-            isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-slate-400'
-          }`}>
+          <div
+            className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold ${
+              isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-slate-400'
+            }`}
+          >
             {isPositive ? <TrendingUp className="h-3 w-3" /> : isNegative ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
             <span>{Math.abs(change)}%</span>
           </div>
         )}
       </div>
 
-      <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-slate-800/60 pt-2 text-[9px] text-slate-400 sm:text-[10px]">
-        <span className="min-w-0 truncate">{subtext || (change !== undefined ? changePeriod : 'Real-time telemetry')}</span>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isLive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-          <span className="hidden text-[9px] text-slate-500 xl:inline">{updatedAt}</span>
+      {(subtext || changePeriod) && (
+        <div className="text-[11px] text-slate-400 truncate flex items-center justify-between border-t border-slate-800/60 pt-2">
+          <span>{subtext}</span>
+          {changePeriod && <span className="text-slate-400 font-mono text-[10px]">{changePeriod}</span>}
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,19 +1,18 @@
 /**
- * SystemHealth — Full infrastructure observability page.
+ * SystemHealth — Enterprise Infrastructure Observability
  *
- * Displays real-time status, true measured individual latency from health diagnostics,
- * uptime counters, ML model version info, and database collection statistics.
- * Auto-refreshes every 30 seconds.
+ * Real-time health matrix, true measured roundtrip probe latencies,
+ * backend uptime counters, ML model registry, and persistent storage metrics.
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Activity, RefreshCw, Database, Server, Cpu, Globe,
-  Clock, Zap, BarChart3,
-  ShieldCheck, Brain
+  Clock, BarChart3, Brain
 } from 'lucide-react';
 import { adminApi, healthApi, modelsApi } from '../services/api';
 import { useRiskFeed } from '../hooks/useRiskFeed';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface ServiceStatus {
   id: string;
@@ -50,15 +49,15 @@ function latencyColor(ms: number | null): string {
 }
 
 function LatencyBar({ ms }: { ms: number | null }) {
-  if (ms === null) return <span className="text-slate-600 text-[10px] font-mono">Realtime / Event-driven</span>;
+  if (ms === null) return <span className="text-slate-500 text-[10px] font-mono">Event-driven stream</span>;
   const pct = Math.min(100, Math.max(5, (ms / 1000) * 100));
   const color = ms < 100 ? 'bg-emerald-500' : ms < 500 ? 'bg-amber-500' : 'bg-rose-500';
   return (
     <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+      <div className="w-16 h-1 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className={`text-[10px] font-mono font-bold ${latencyColor(ms)}`}>{ms}ms</span>
+      <span className={`text-[11px] font-mono font-bold tabular-nums ${latencyColor(ms)}`}>{ms}ms</span>
     </div>
   );
 }
@@ -67,11 +66,11 @@ export default function SystemHealth() {
   const { connected: wsConnected } = useRiskFeed(() => {});
 
   const [services, setServices] = useState<ServiceStatus[]>([
-    { id: 'backend', label: 'Backend API Service', sub: 'Express REST Core (Node.js)', ok: true, latencyMs: null, icon: Server, version: 'v2.0.0' },
-    { id: 'mongodb', label: 'MongoDB Cluster', sub: 'Persistent Database Store', ok: true, latencyMs: null, icon: Database },
-    { id: 'redis', label: 'Redis / Message Broker', sub: 'Pub/Sub & Event Cache', ok: true, latencyMs: null, icon: Activity },
-    { id: 'ml', label: 'ML Microservice', sub: 'Python FastAPI (XGBoost / IF)', ok: true, latencyMs: null, icon: Cpu, version: 'v1.0.0' },
-    { id: 'ws', label: 'WebSocket Gateway', sub: 'Real-time Client Telemetry', ok: wsConnected, latencyMs: null, icon: Globe },
+    { id: 'backend', label: 'Core REST Backend', sub: 'Express API (Node.js)', ok: true, latencyMs: null, icon: Server, version: 'v2.0.0' },
+    { id: 'mongodb', label: 'MongoDB Atlas', sub: 'Persistent Cluster Store', ok: true, latencyMs: null, icon: Database },
+    { id: 'redis', label: 'Redis Event Broker', sub: 'Pub/Sub & Cache Layer', ok: true, latencyMs: null, icon: Activity },
+    { id: 'ml', label: 'ML Microservice', sub: 'FastAPI (XGBoost / IF)', ok: true, latencyMs: null, icon: Cpu, version: 'v1.0.0' },
+    { id: 'ws', label: 'WebSocket Gateway', sub: 'Real-Time Client Stream', ok: wsConnected, latencyMs: null, icon: Globe },
   ]);
 
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
@@ -82,7 +81,6 @@ export default function SystemHealth() {
   const [backendUptime, setBackendUptime] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
-  // Tick elapsed uptime every second
   const elapsedRef = useRef(0);
   useEffect(() => {
     const t = setInterval(() => {
@@ -119,8 +117,8 @@ export default function SystemHealth() {
       setServices([
         {
           id: 'backend',
-          label: 'Backend API Service',
-          sub: 'Express REST Core (Node.js)',
+          label: 'Core REST Backend',
+          sub: 'Express API (Node.js)',
           ok: comp ? comp.backend.status === 'HEALTHY' : true,
           latencyMs: comp?.backend.latency_ms ?? null,
           icon: Server,
@@ -128,7 +126,7 @@ export default function SystemHealth() {
         },
         {
           id: 'mongodb',
-          label: 'MongoDB Cluster',
+          label: 'MongoDB Atlas',
           sub: 'Persistent Document Store',
           ok: comp?.mongodb.connected ?? true,
           latencyMs: comp?.mongodb.latency_ms ?? null,
@@ -136,7 +134,7 @@ export default function SystemHealth() {
         },
         {
           id: 'redis',
-          label: 'Redis / Message Broker',
+          label: 'Redis Event Broker',
           sub: 'Pub/Sub & Event Stream Cache',
           ok: comp?.redis.connected ?? true,
           latencyMs: comp?.redis.latency_ms ?? null,
@@ -145,7 +143,7 @@ export default function SystemHealth() {
         {
           id: 'ml',
           label: 'ML Microservice',
-          sub: 'Python FastAPI (XGBoost / IF)',
+          sub: 'FastAPI (XGBoost / IF)',
           ok: comp?.ml_service.connected ?? (modelData !== null),
           latencyMs: comp?.ml_service.latency_ms ?? null,
           icon: Cpu,
@@ -154,7 +152,7 @@ export default function SystemHealth() {
         {
           id: 'ws',
           label: 'WebSocket Gateway',
-          sub: 'Real-time Client Telemetry',
+          sub: 'Real-Time Client Stream',
           ok: wsConnected,
           latencyMs: null,
           icon: Globe,
@@ -186,217 +184,194 @@ export default function SystemHealth() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-
-      {/* ── Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <ShieldCheck className="w-5 h-5 text-cyan-400" />
-            <h1 className="text-xl font-black text-white tracking-tight">System Infrastructure Health</h1>
-            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+      {/* Page Header */}
+      <PageHeader
+        category="Infrastructure & Observability"
+        title="System Infrastructure Health"
+        subtitle="Distributed microservice connectivity, verified roundtrip probe latencies, and persistent storage metrics"
+        badge={
+          <span
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${
               allOk
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-            }`}>
-              {allOk ? 'All Systems Operational' : `${okCount}/${services.length} Online`}
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Monitoring {services.length} microservices and distributed engines with true round-trip ping verification
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
+                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60'
+                : 'bg-amber-950/40 text-amber-400 border-amber-800/60'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${allOk ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            {allOk ? 'All Systems Operational' : `${okCount}/${services.length} Online`}
+          </span>
+        }
+      >
+        <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-[10px] text-slate-500 font-mono">Backend Uptime</p>
-            <p className="text-sm font-bold text-white font-mono">{formatUptime((backendUptime ?? 0) + elapsed)}</p>
-          </div>
-          <div className="text-right hidden sm:block">
-            <p className="text-[10px] text-slate-500 font-mono">Last Check</p>
-            <p className="text-xs text-slate-300 font-mono">{lastCheck.toLocaleTimeString()}</p>
+            <span className="text-[10px] text-slate-500 font-mono block">Uptime</span>
+            <span className="text-xs font-mono font-bold text-white">{formatUptime((backendUptime ?? 0) + elapsed)}</span>
           </div>
           <button
+            type="button"
             onClick={checkHealth}
             disabled={loading}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors flex items-center gap-2 border border-slate-700"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 border border-slate-800 px-3 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition-colors"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Probing…' : 'Run Diagnostics'}
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Probing…' : 'Run Diagnostics'}</span>
           </button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* ── Service Cards ── */}
+      {/* Service Status Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {services.map((s) => (
           <div
             key={s.id}
-            className={`rounded-xl border bg-slate-900/80 p-5 shadow-lg transition-all ${
-              s.ok ? 'border-slate-800' : 'border-rose-500/30 bg-rose-500/5'
+            className={`panel p-4 flex flex-col justify-between space-y-3 ${
+              s.ok ? '' : 'border-rose-900/40 bg-rose-950/10'
             }`}
           >
-            <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl border ${
+                <div className={`p-2 rounded border ${
                   s.ok
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                    ? 'bg-slate-900 border-slate-800 text-slate-300'
+                    : 'bg-rose-950/50 border-rose-800 text-rose-400'
                 }`}>
-                  <s.icon className="w-5 h-5" />
+                  <s.icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">{s.label}</h3>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">{s.sub}</p>
+                  <h3 className="text-xs font-semibold text-white">{s.label}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{s.sub}</p>
                 </div>
               </div>
+
               <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${s.ok ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
-                  <span className={`text-[10px] font-bold ${s.ok ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {s.ok ? 'ONLINE' : 'DEGRADED'}
-                  </span>
-                </div>
+                <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border ${
+                  s.ok
+                    ? 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
+                    : 'bg-rose-950/50 text-rose-400 border-rose-800/60'
+                }`}>
+                  {s.ok ? 'ONLINE' : 'DEGRADED'}
+                </span>
                 {s.version && (
-                  <span className="text-[9px] text-slate-600 font-mono">{s.version}</span>
+                  <span className="text-[9px] text-slate-500 font-mono">{s.version}</span>
                 )}
               </div>
             </div>
 
-            <div className="border-t border-slate-800 pt-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">True Probe Latency</span>
-                <LatencyBar ms={s.latencyMs} />
-              </div>
+            <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs">
+              <span className="text-[10px] font-mono uppercase text-slate-500">Probe Latency</span>
+              <LatencyBar ms={s.latencyMs} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* ── ML Model Details ── */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
-        <div className="flex items-center gap-2 mb-4">
-          <Brain className="w-4 h-4 text-purple-400" />
-          <h2 className="text-sm font-bold text-white">ML Model Registry</h2>
+      {/* ML Model Registry Section */}
+      <div className="panel p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-purple-400" />
+            <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-white">
+              ML Model Registry &amp; Pipelines
+            </h2>
+          </div>
           {modelInfo && (
-            <span className={`ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+            <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${
               modelInfo.fallback_active
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                ? 'bg-amber-950/50 text-amber-400 border-amber-800/60'
+                : 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
             }`}>
               {modelInfo.fallback_active ? 'RULE-BASED FALLBACK ACTIVE' : 'LIVE ML INFERENCE ACTIVE'}
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
           {/* Isolation Forest */}
-          <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-4 rounded bg-slate-950/60 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-white">Isolation Forest (Unsupervised)</p>
-                <p className="text-[10px] text-slate-500 font-mono">Real-time vector outlier detection</p>
+                <p className="font-semibold text-white">Isolation Forest (Unsupervised)</p>
+                <p className="text-[10px] text-slate-500">Vector outlier detection</p>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                 modelInfo?.isolation_forest?.loaded
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
+                  : 'bg-amber-950/40 text-amber-400 border-amber-800/50'
               }`}>
                 {modelInfo?.isolation_forest?.loaded ? 'Loaded' : 'Fallback'}
               </span>
             </div>
-            <div className="text-[10px] text-slate-500 font-mono">
-              <span className="text-slate-400">Features: </span>
-              {modelInfo?.isolation_forest?.features?.length ?? 14} input dimensions
+            <div className="text-[11px] text-slate-400 pt-1">
+              Input Dimensions: {modelInfo?.isolation_forest?.features?.length ?? 14} features
             </div>
-            <div className="text-[10px] text-slate-500 font-mono mt-1">
-              <span className="text-slate-400">Weight in composite score: </span>15%
+            <div className="text-[11px] text-slate-400">
+              Composite Score Weight: 15%
             </div>
           </div>
 
           {/* XGBoost */}
-          <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-4 rounded bg-slate-950/60 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-white">XGBoost Classifier (Supervised)</p>
-                <p className="text-[10px] text-slate-500 font-mono">Trained fraud classification model</p>
+                <p className="font-semibold text-white">XGBoost Classifier (Supervised)</p>
+                <p className="text-[10px] text-slate-500">Historical fraud pattern scoring</p>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                 modelInfo?.xgboost?.loaded
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
+                  : 'bg-amber-950/40 text-amber-400 border-amber-800/50'
               }`}>
                 {modelInfo?.xgboost?.loaded ? 'Loaded' : 'Fallback'}
               </span>
             </div>
-            <div className="text-[10px] text-slate-500 font-mono">
-              <span className="text-slate-400">SHAP Explainability: </span>
-              <span className={modelInfo?.xgboost?.shap_available ? 'text-emerald-400' : 'text-amber-400'}>
-                {modelInfo?.xgboost?.shap_available ? 'Available & Active' : 'Fallback Attribution'}
-              </span>
+            <div className="text-[11px] text-slate-400 pt-1">
+              SHAP Explainability: {modelInfo?.xgboost?.shap_available ? 'Available & Active' : 'Fallback Attribution'}
             </div>
-            <div className="text-[10px] text-slate-500 font-mono mt-1">
-              <span className="text-slate-400">Weight in composite score: </span>15%
+            <div className="text-[11px] text-slate-400">
+              Composite Score Weight: 15%
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Database Stats ── */}
+      {/* Database Collection Statistics */}
       {dbStats?.collections && (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-bold text-white">Database Collection Stats</h2>
+        <div className="panel p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-blue-400" />
+              <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-white">
+                Database Collection Footprint
+              </h2>
+            </div>
             {dbStats.totalSizeMB !== undefined && (
-              <span className="ml-auto text-[10px] text-slate-400 font-mono">
-                Total Allocated: <span className="text-white font-bold">{dbStats.totalSizeMB.toFixed(2)} MB</span>
+              <span className="text-[10px] font-mono text-slate-400">
+                Total Allocated: <span className="text-white font-semibold">{dbStats.totalSizeMB.toFixed(2)} MB</span>
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {Object.entries(dbStats.collections).map(([name, stat]) => (
-              <div key={name} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-                <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider truncate">{name}</p>
-                <p className="text-lg font-black text-white mt-1">{stat.count.toLocaleString()}</p>
-                <p className="text-[9px] text-slate-600 font-mono">
+              <div key={name} className="p-3 rounded bg-slate-950/60 border border-slate-800">
+                <span className="text-[10px] font-mono uppercase text-slate-500 block truncate">{name}</span>
+                <span className="text-base font-bold text-white font-mono block mt-1">{stat.count.toLocaleString()}</span>
+                <span className="text-[9px] font-mono text-slate-500 block mt-0.5">
                   {(stat.sizeBytes / 1024).toFixed(1)} KB
-                </p>
+                </span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Simulation Status ── */}
-      {dbStats?.simulation !== undefined && (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold text-white">Simulation Engine Status</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${dbStats.simulation.isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
-              <span className={`text-xs font-bold ${dbStats.simulation.isRunning ? 'text-emerald-400' : 'text-slate-500'}`}>
-                {dbStats.simulation.isRunning ? `Running — ${dbStats.simulation.rate} tx/min` : 'Standby / Stopped'}
-              </span>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 mt-2 font-mono">
-            Synthetic transaction & attack scenario generator · Head to <span className="text-cyan-400">Simulation Center</span> to trigger test vectors
-          </p>
-        </div>
-      )}
-
-      {/* ── Last Check Timestamp ── */}
-      <div className="flex items-center justify-center gap-2 text-[10px] text-slate-600 font-mono">
+      {/* Footnote */}
+      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 font-mono">
         <Clock className="w-3 h-3" />
-        <span>Verified as of {lastCheck.toLocaleTimeString()}</span>
-        <span>·</span>
-        <span>Client session started {uptimeStart.toLocaleTimeString()}</span>
+        <span>Verified diagnostics at {lastCheck.toLocaleTimeString()}</span>
+        <span>•</span>
+        <span>Client session active {uptimeStart.toLocaleTimeString()}</span>
       </div>
-
     </div>
   );
 }

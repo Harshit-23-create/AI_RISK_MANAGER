@@ -9,6 +9,7 @@ export interface TokenResponse {
   user_id: number;
   email: string;
   role: string;
+  full_name?: string | null;
 }
 
 export interface User {
@@ -40,6 +41,7 @@ export interface Transaction {
   status: string;
   decision?: Decision;
   scenario_label: string | null;
+  risk_score?: number | null;
   timestamp: string;
   created_at: string;
 }

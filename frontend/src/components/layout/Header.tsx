@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LogOut, Zap, Search, Bell, Menu, ChevronDown,
-  Settings as SettingsIcon, ShieldAlert, ArrowRight, X, Clock
+  Settings as SettingsIcon, ShieldAlert, ArrowRight, Clock, Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -35,6 +35,7 @@ export default function Header({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Notifications state
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -56,6 +57,24 @@ export default function Header({
     loadNotifications();
     const interval = setInterval(loadNotifications, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setNotificationsOpen(false);
+        setUserMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Debounced global search
@@ -101,43 +120,40 @@ export default function Header({
     setLoading(true);
     try {
       await simulationApi.demo();
-      toast.success('Demo mode activated with synthetic transactions stream!');
+      toast.success('Dispatched synthetic transactions batch');
     } catch (error: any) {
       toast.error(
-        error?.response?.data?.error?.message || 'Failed to start demo'
+        error?.response?.data?.error?.message || 'Failed to start demo batch'
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const getWsPill = (status: WsStatus) => {
+  const getWsBadge = (status: WsStatus) => {
     if (status === 'connected') {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-400">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-          </span>
-          Live
-        </span>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="hidden sm:inline">Stream Live</span>
+        </div>
       );
     }
 
     if (status === 'reconnecting') {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-amber-400">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-          Reconnect
-        </span>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-amber-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+          <span className="hidden sm:inline">Reconnecting</span>
+        </div>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-rose-400">
-        <span className="h-2 w-2 rounded-full bg-rose-400" />
-        Offline
-      </span>
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+        <span className="hidden sm:inline">Offline</span>
+      </div>
     );
   };
 
@@ -146,61 +162,56 @@ export default function Header({
     : 'AD';
 
   return (
-    <header className="sticky top-0 z-40 flex min-h-16 w-full shrink-0 items-center border-b border-slate-800 bg-slate-950/95 px-3 backdrop-blur-xl sm:px-4 lg:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+    <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center border-b border-slate-800/80 bg-slate-950/90 px-3 backdrop-blur-md sm:px-4 lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <button
           type="button"
           aria-label="Open navigation menu"
           aria-expanded={mobileMenuOpen}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-900 hover:text-white lg:hidden"
           onClick={() => setMobileMenuOpen(true)}
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </button>
 
         {/* Global Search Bar with Live Results Dropdown */}
-        <div ref={searchRef} className="relative hidden w-full max-w-xl md:block">
+        <div ref={searchRef} className="relative hidden w-full max-w-md md:block">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input
+              ref={searchInputRef}
               type="search"
               aria-label="Search transactions, users, and IP addresses"
-              placeholder="Search across Tx IDs, users, IP addresses & alerts…"
+              placeholder="Search Tx IDs, users, IP addresses & alerts…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.trim() && setSearchOpen(true)}
-              className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-9 pr-8 text-xs text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
+              className="h-8.5 w-full rounded-md border border-slate-800 bg-slate-900/80 pl-9 pr-14 text-xs text-white placeholder:text-slate-500 focus:border-slate-700 focus:outline-none"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setSearchOpen(false); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] font-mono text-slate-500 bg-slate-950 px-1 py-0.5 rounded border border-slate-800">
+              Ctrl+K
+            </div>
           </div>
 
           {/* Search Dropdown Popup */}
           {searchOpen && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 text-xs">
+            <div className="absolute left-0 right-0 top-full mt-1.5 panel bg-slate-900 shadow-2xl overflow-hidden z-50 text-xs">
               {searching ? (
                 <div className="p-4 text-center text-slate-400 flex items-center justify-center gap-2">
                   <Clock className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                  Searching SOC database...
+                  Querying SOC indices...
                 </div>
               ) : (!searchResults?.transactions.length && !searchResults?.alerts.length) ? (
                 <div className="p-4 text-center text-slate-500">
-                  No matching transactions or alerts found for "{searchQuery}".
+                  No matching records for "{searchQuery}".
                 </div>
               ) : (
-                <div className="max-h-[70vh] overflow-y-auto divide-y divide-slate-800/60">
+                <div className="max-h-[70vh] overflow-y-auto divide-y divide-slate-800/80">
                   {/* Matching Transactions */}
                   {Boolean(searchResults?.transactions.length) && (
-                    <div className="p-3">
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2 font-bold px-1">
-                        Matching Transactions ({searchResults!.transactions.length})
+                    <div className="p-2.5">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 font-semibold px-1">
+                        Transactions ({searchResults!.transactions.length})
                       </div>
                       <div className="space-y-1">
                         {searchResults!.transactions.map((tx) => (
@@ -210,18 +221,18 @@ export default function Header({
                               navigate(`/transactions/${tx.transaction_id}`);
                               setSearchOpen(false);
                             }}
-                            className="p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
+                            className="p-2 rounded hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
                           >
                             <div className="min-w-0">
-                              <span className="font-mono text-cyan-400 font-bold block truncate">
+                              <span className="font-mono text-cyan-400 font-semibold block truncate text-xs">
                                 {tx.transaction_id}
                               </span>
-                              <span className="text-[11px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 font-mono">
                                 User: {tx.user_id} {tx.ip_address ? `• IP: ${tx.ip_address}` : ''}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="font-bold text-white">
+                              <span className="font-mono text-xs font-semibold text-white">
                                 {formatCurrency(tx.amount, tx.currency)}
                               </span>
                               <RiskBadge decision={tx.decision} size="sm" />
@@ -234,9 +245,9 @@ export default function Header({
 
                   {/* Matching Alerts */}
                   {Boolean(searchResults?.alerts.length) && (
-                    <div className="p-3">
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2 font-bold px-1">
-                        Matching Alerts ({searchResults!.alerts.length})
+                    <div className="p-2.5">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 font-semibold px-1">
+                        Alerts ({searchResults!.alerts.length})
                       </div>
                       <div className="space-y-1">
                         {searchResults!.alerts.map((al) => (
@@ -246,15 +257,15 @@ export default function Header({
                               navigate('/alerts');
                               setSearchOpen(false);
                             }}
-                            className="p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
+                            className="p-2 rounded hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors"
                           >
                             <div className="min-w-0 pr-2">
-                              <span className="font-bold text-white block truncate">{al.title}</span>
+                              <span className="font-medium text-white block truncate text-xs">{al.title}</span>
                               <span className="text-[10px] text-slate-400 font-mono">
                                 {formatTimestamp(al.created_at)} • Status: {al.status}
                               </span>
                             </div>
-                            <SeverityBadge severity={al.severity} />
+                            <SeverityBadge severity={al.severity} size="sm" />
                           </div>
                         ))}
                       </div>
@@ -265,57 +276,50 @@ export default function Header({
             </div>
           )}
         </div>
-
-        <div className="min-w-0 md:hidden">
-          <span className="block truncate text-xs font-bold text-white">
-            AI Risk Manager
-          </span>
-          <span className="block text-[9px] uppercase tracking-wider text-slate-500 font-mono">
-            SOC Console
-          </span>
-        </div>
       </div>
 
-      <div className="ml-2 flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-        <div className="hidden sm:block">{getWsPill(wsStatus)}</div>
+      {/* Right Actions */}
+      <div className="flex items-center gap-2">
+        {getWsBadge(wsStatus)}
 
+        {/* Quick Batch Simulator Button */}
         <button
           type="button"
           onClick={startDemo}
           disabled={loading}
-          aria-label="Start demo mode"
-          className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-bold text-purple-300 transition hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+          title="Inject synthetic test batch"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 border border-slate-800 px-2.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-850 transition-colors disabled:opacity-50"
         >
-          <Zap className={`h-3.5 w-3.5 ${loading ? 'animate-pulse' : ''}`} />
+          <Zap className="h-3.5 w-3.5 text-amber-400" />
           <span className="hidden sm:inline">
-            {loading ? 'Starting…' : 'Demo Mode'}
+            {loading ? 'Injecting…' : 'Simulate Batch'}
           </span>
         </button>
 
-        {/* Notifications Popover */}
+        {/* Notifications Button & Dropdown */}
         <div ref={notifRef} className="relative">
           <button
             type="button"
-            aria-label="Notifications"
+            aria-label="Security notifications"
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="relative flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850 transition-colors"
           >
-            <Bell className="h-4 w-4" />
+            <Bell className="h-3.5 w-3.5" />
             {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-slate-950">
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-mono font-bold text-white">
                 {alerts.length > 9 ? '9+' : alerts.length}
               </span>
             )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl z-50">
+            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 panel bg-slate-900 shadow-2xl z-50 p-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 px-1 mb-2">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> Active Security Alerts
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> Open Security Incidents
                 </span>
-                <span className="text-[10px] font-mono text-cyan-400 font-bold">
-                  {alerts.length} Pending
+                <span className="text-[10px] font-mono text-slate-400 font-medium">
+                  {alerts.length} Pending Triage
                 </span>
               </div>
 
@@ -332,11 +336,11 @@ export default function Header({
                         navigate('/alerts');
                         setNotificationsOpen(false);
                       }}
-                      className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer space-y-1 transition-all"
+                      className="p-2.5 rounded bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer space-y-1 transition-all"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <span className="text-xs font-bold text-white truncate">{al.title}</span>
-                        <SeverityBadge severity={al.severity} />
+                        <span className="text-xs font-medium text-white truncate">{al.title}</span>
+                        <SeverityBadge severity={al.severity} size="sm" />
                       </div>
                       <p className="text-[11px] text-slate-400 line-clamp-1">{al.message}</p>
                       <span className="text-[9px] font-mono text-slate-500 block">
@@ -354,7 +358,7 @@ export default function Header({
                     navigate('/alerts');
                     setNotificationsOpen(false);
                   }}
-                  className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1 w-full"
+                  className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1 w-full"
                 >
                   Manage All Alerts <ArrowRight className="w-3 h-3" />
                 </button>
@@ -363,33 +367,19 @@ export default function Header({
           )}
         </div>
 
-        {/* User Account Menu */}
+        {/* User Dropdown */}
         <div className="relative">
           <button
             type="button"
-            aria-label="Open account menu"
-            aria-expanded={userMenuOpen}
+            aria-label="Account menu"
             onClick={() => setUserMenuOpen((open) => !open)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-1 transition hover:border-cyan-500/30"
+            className="flex h-8 items-center gap-2 rounded-md border border-slate-800 bg-slate-900 px-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-850 transition-colors"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-xs font-bold text-cyan-300">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[10px] font-mono font-bold text-slate-300">
               {initials}
             </div>
-
-            <div className="hidden min-w-0 max-w-40 flex-col items-start pr-1 md:flex">
-              <span className="w-full truncate text-[11px] font-bold leading-tight text-slate-200">
-                {user?.email || 'admin@riskmanager.ai'}
-              </span>
-              <span className="text-[9px] font-mono uppercase text-slate-500">
-                {user?.role || 'Admin'}
-              </span>
-            </div>
-
-            <ChevronDown
-              className={`mr-1 hidden h-3.5 w-3.5 text-slate-500 transition-transform md:block ${
-                userMenuOpen ? 'rotate-180' : ''
-              }`}
-            />
+            <span className="hidden md:inline font-mono text-[11px]">{user?.email || 'admin@riskmanager.ai'}</span>
+            <ChevronDown className="h-3 w-3 text-slate-500" />
           </button>
 
           {userMenuOpen && (
@@ -401,25 +391,16 @@ export default function Header({
                 onClick={() => setUserMenuOpen(false)}
               />
 
-              <div className="absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-1 shadow-2xl">
-                <div className="border-b border-slate-800 px-3 py-2 md:hidden">
-                  <p className="truncate text-xs font-bold text-white">
-                    {user?.email || 'admin@riskmanager.ai'}
-                  </p>
-                  <p className="mt-0.5 text-[9px] font-mono uppercase text-slate-500">
-                    {user?.role || 'Admin'}
-                  </p>
-                </div>
-
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-48 panel bg-slate-900 p-1 shadow-2xl">
                 <button
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
                     navigate('/settings');
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
                 >
-                  <SettingsIcon className="h-3.5 w-3.5 text-cyan-400" />
+                  <SettingsIcon className="h-3.5 w-3.5 text-slate-400" />
                   Policy &amp; Settings
                 </button>
 
@@ -429,9 +410,9 @@ export default function Header({
                     setUserMenuOpen(false);
                     navigate('/system-health');
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
                 >
-                  <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                  <Activity className="h-3.5 w-3.5 text-slate-400" />
                   Observability &amp; Health
                 </button>
 
@@ -443,7 +424,7 @@ export default function Header({
                     setUserMenuOpen(false);
                     logout();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-rose-400 transition hover:bg-rose-500/10"
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-semibold text-rose-400 hover:bg-rose-950/40"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out

@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Play, Square, Zap, ShieldAlert, Activity, Radio, AlertOctagon, Terminal } from 'lucide-react';
+import {
+  Play, Square, Zap, ShieldAlert, Activity, AlertOctagon,
+  Flame, CheckCircle, Shield, ArrowRight
+} from 'lucide-react';
 import { simulationApi } from '../services/api';
 import type { ToastMessage } from '../components/ui/Toast';
 import { ToastContainer } from '../components/ui/Toast';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function Simulation() {
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedScenario, setSelectedScenario] = useState('normal_payment');
+  const [selectedRate, setSelectedRate] = useState(5);
+  const [selectedRatio, setSelectedRatio] = useState(0.25);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (type: 'info' | 'warning' | 'error' | 'success', title: string, message: string) => {
@@ -23,14 +28,14 @@ export default function Simulation() {
     try {
       const data = await simulationApi.status();
       setStatus(data);
-    } catch (e) {
-
+    } catch {
+      // offline fallback handled by api service
     }
   };
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 2000);
+    const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,9 +44,9 @@ export default function Simulation() {
     try {
       await simulationApi.start(rate, suspiciousRatio);
       await fetchStatus();
-      addToast('success', 'Simulation Started', `Traffic stream started at ${rate} req/s`);
+      addToast('success', 'Simulation Stream Active', `Generating traffic at ${rate} transactions/sec`);
     } catch (e: any) {
-      addToast('error', 'Simulation Error', e?.response?.data?.error?.message || 'Failed to start simulation');
+      addToast('error', 'Simulation Failed', e?.response?.data?.error?.message || 'Could not initiate simulation engine');
     } finally {
       setLoading(false);
     }
@@ -52,179 +57,232 @@ export default function Simulation() {
     try {
       await simulationApi.stop();
       await fetchStatus();
-      addToast('info', 'Simulation Stopped', 'Live traffic generation halted');
-    } catch (e) {
-      addToast('error', 'Simulation Error', 'Failed to stop simulation');
+      addToast('info', 'Simulation Standby', 'Synthetic transaction generation stopped');
+    } catch {
+      addToast('error', 'Error', 'Failed to halt simulation');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTriggerScenario = async () => {
+  const handleTriggerScenario = async (scenarioId: string) => {
     setLoading(true);
     try {
-      await simulationApi.triggerScenario(selectedScenario);
+      await simulationApi.triggerScenario(scenarioId);
       await fetchStatus();
-      addToast('warning', 'Vector Injected', `Injected synthetic attack vector: ${selectedScenario}`);
-    } catch (e) {
-      addToast('error', 'Injection Error', 'Failed to trigger attack scenario');
+      addToast('warning', 'Vector Injected', `Dispatched attack payload: ${scenarioId}`);
+    } catch {
+      addToast('error', 'Injection Error', 'Failed to inject scenario vector');
     } finally {
       setLoading(false);
     }
   };
 
   const scenarios = [
-    { id: 'normal_payment', label: 'Normal Low-Risk Payments', desc: 'Standard user transaction velocity & amounts' },
-    { id: 'unusual_amount', label: 'Unusual Large Amount (5-20x)', desc: 'High value payment anomaly' },
-    { id: 'new_device', label: 'Unrecognised Device & Location', desc: 'New device fingerprint & geo shift' },
-    { id: 'suspicious_ip', label: 'Foreign / VPN Suspicious IP', desc: 'High threat reputation IP address' },
-    { id: 'multiple_failed_attempts', label: 'Multiple Auth Failures', desc: 'Brute-force auth velocity signal' },
-    { id: 'api_burst', label: 'API Bot Traffic Burst', desc: 'Abnormal API transaction frequency' },
-    { id: 'high_risk_payment', label: 'Combined Fraud Attack', desc: 'All high-risk signals elevated simultaneously' },
+    {
+      id: 'normal_payment',
+      label: 'Benign Consumer Stream',
+      desc: 'Standard velocity, verified hardware fingerprints, residential IP distribution',
+      icon: CheckCircle,
+      threat: 'LOW',
+    },
+    {
+      id: 'unusual_amount',
+      label: 'Large Amount Outlier Spike',
+      desc: 'Payment values 5x–20x above user historical baseline average',
+      icon: Activity,
+      threat: 'MEDIUM',
+    },
+    {
+      id: 'new_device',
+      label: 'Unrecognized Hardware & Geo Shift',
+      desc: 'Unknown user-agent fingerprint coupled with instant cross-region IP hop',
+      icon: Shield,
+      threat: 'MEDIUM',
+    },
+    {
+      id: 'suspicious_ip',
+      label: 'Anonymized Proxy / Tor Exit Node',
+      desc: 'High threat reputation datacenter IP or known botnet proxy pool',
+      icon: ShieldAlert,
+      threat: 'HIGH',
+    },
+    {
+      id: 'multiple_failed_attempts',
+      label: 'Credential Stuffing & Auth Retries',
+      desc: 'High velocity repeated authentication failures preceding payment settlement',
+      icon: AlertOctagon,
+      threat: 'HIGH',
+    },
+    {
+      id: 'api_burst',
+      label: 'Distributed Botnet API Flood',
+      desc: 'Abnormal Layer-7 request rate velocity exceeding rate limits',
+      icon: Zap,
+      threat: 'HIGH',
+    },
+    {
+      id: 'high_risk_payment',
+      label: 'Composite Coordinated Fraud',
+      desc: 'Simultaneous elevation across device, proxy, amount, and velocity signals',
+      icon: Flame,
+      threat: 'CRITICAL',
+    },
   ];
 
+  const isRunning = Boolean(status?.running || status?.is_running);
+
   return (
-    <div className="w-full min-w-0 space-y-4 overflow-x-hidden sm:space-y-5 lg:space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black text-white tracking-tight">Simulation Center</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-500/10 text-purple-400 border border-purple-500/30">
-              Dev Mode
-            </span>
+      {/* Page Header */}
+      <PageHeader
+        category="Testing & Evaluation"
+        title="Synthetic Fraud & Traffic Simulator"
+        subtitle="Orchestrate synthetic financial payment streams, inject multi-vector attack scenarios, and stress-test the real-time scoring engine"
+        badge={
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-900 border border-slate-800 text-slate-300">
+            <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+            {isRunning ? 'Stream Active' : 'Engine Standby'}
+          </span>
+        }
+      />
+
+      {/* Top Stream Control Panel */}
+      <div className="panel p-5 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono uppercase text-slate-400">Stream Status</span>
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+            <h2 className="text-base font-bold text-white">
+              {isRunning ? `Streaming Live (${status?.current_rate || status?.rate || selectedRate} tx/sec)` : 'Generator Standby'}
+            </h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Generate real-time payment telemetry & synthetic attack vectors</p>
+          <p className="text-xs text-slate-400">
+            {isRunning ? 'Generating live events to Redis pub/sub and WebSocket broadcast' : 'Configure rate and suspicion ratio to initiate automated stream'}
+          </p>
+        </div>
+
+        {/* Rate & Suspicion Selectors */}
+        <div className="space-y-3 bg-slate-950/60 p-3 rounded border border-slate-800 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 font-mono">Stream Velocity:</span>
+            <div className="flex items-center gap-1">
+              {[2, 5, 10, 25].map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  onClick={() => setSelectedRate(rate)}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                    selectedRate === rate ? 'bg-slate-800 text-cyan-400 font-bold border border-slate-700' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {rate}/s
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 font-mono">Suspicious Ratio:</span>
+            <div className="flex items-center gap-1">
+              {[0.1, 0.25, 0.5, 0.75].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRatio(r)}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                    selectedRatio === r ? 'bg-slate-800 text-rose-400 font-bold border border-slate-700' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {Math.round(r * 100)}%
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stream Actions */}
+        <div className="flex items-center justify-end gap-2.5">
+          {isRunning ? (
+            <button
+              type="button"
+              onClick={handleStop}
+              disabled={loading}
+              className="px-4 py-2 rounded bg-rose-950/60 hover:bg-rose-950/80 text-rose-300 border border-rose-800/80 text-xs font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+              <Square className="w-3.5 h-3.5" /> Stop Stream
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleStart(selectedRate, selectedRatio)}
+              disabled={loading}
+              className="px-5 py-2 rounded bg-primary hover:bg-primary-hover text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" /> Start Traffic Stream
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <div className="space-y-6">
-
-          <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Terminal className="w-4 h-4 text-cyan-400" /> Engine Status
-            </h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className={`w-3 h-3 rounded-full ${status?.running ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
-                <div>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-bold">Current State</span>
-                  <span className="text-sm font-bold text-white">
-                    {status?.running ? (
-                      <span className="text-emerald-400 flex items-center gap-1.5">
-                        <Radio className="w-4 h-4 animate-pulse" /> Live ({status.events_per_second || 0} req/s)
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">Stopped</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-              {status?.running ? (
-                <button
-                  onClick={handleStop}
-                  disabled={loading}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/40 transition-colors flex items-center gap-1.5"
-                >
-                  <Square className="w-4 h-4" /> Stop Stream
-                </button>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 text-center pt-4 border-t border-slate-800">
-              <div className="rounded-lg bg-slate-950/60 p-3 border border-slate-800">
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Total</span>
-                <span className="text-lg font-mono font-bold text-white">{status?.events_generated ?? 0}</span>
-              </div>
-              <div className="rounded-lg bg-slate-950/60 p-3 border border-slate-800">
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Normal</span>
-                <span className="text-lg font-mono font-bold text-emerald-400">{status?.normal_events ?? 0}</span>
-              </div>
-              <div className="rounded-lg bg-slate-950/60 p-3 border border-slate-800">
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Threats</span>
-                <span className="text-lg font-mono font-bold text-rose-400">{status?.suspicious_events ?? 0}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Activity className="w-4 h-4 text-cyan-400" /> Automated Continuous Traffic
-            </h2>
-            <div className="space-y-3">
-              <button
-                onClick={() => handleStart(2, 0.1)}
-                disabled={loading || status?.running}
-                className="w-full p-4 text-left rounded-xl border border-slate-800 bg-slate-950/60 hover:border-emerald-500/40 hover:bg-emerald-950/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-bold text-white group-hover:text-emerald-400">Normal Operations Profile</span>
-                  <Play className="w-4 h-4 text-emerald-400" />
-                </div>
-                <p className="text-xs text-slate-400">Simulates standard payment flow (2 req/sec, 10% baseline anomaly ratio)</p>
-              </button>
-
-              <button
-                onClick={() => handleStart(8, 0.4)}
-                disabled={loading || status?.running}
-                className="w-full p-4 text-left rounded-xl border border-slate-800 bg-slate-950/60 hover:border-rose-500/40 hover:bg-rose-950/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-bold text-white group-hover:text-rose-400">High Threat Attack Spike</span>
-                  <AlertOctagon className="w-4 h-4 text-rose-400" />
-                </div>
-                <p className="text-xs text-slate-400">Simulates targeted fraud attack (8 req/sec, 40% high risk attack ratio)</p>
-              </button>
-            </div>
+      {/* Scenario Attack Injection Matrix */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+          <div>
+            <h3 className="text-sm font-semibold text-white font-mono uppercase tracking-wider">
+              Attack Vector Injection Library
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Instantly trigger individual synthetic payment events to test SOC alerting and model thresholds
+            </p>
           </div>
         </div>
 
-        <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg h-fit space-y-4">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-            <ShieldAlert className="w-4 h-4 text-amber-400" /> Inject Single Attack Vector
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed mb-4">
-            Manually trigger specific fraud scenarios into the data stream. These events will be instantly routed through the Risk Engine, evaluated by ML models, and appear on the Dashboard feed.
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {scenarios.map((sc) => {
+            const Icon = sc.icon;
+            const threatStyles = {
+              LOW: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50',
+              MEDIUM: 'bg-amber-950/40 text-amber-400 border-amber-800/50',
+              HIGH: 'bg-orange-950/40 text-orange-400 border-orange-800/50',
+              CRITICAL: 'bg-rose-950/60 text-rose-400 border-rose-800/60 font-bold',
+            }[sc.threat];
 
-          <div className="space-y-3">
-            {scenarios.map((s) => (
-              <label 
-                key={s.id} 
-                className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                  selectedScenario === s.id 
-                    ? 'bg-cyan-500/10 border-cyan-500/40' 
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-600'
-                }`}
+            return (
+              <div
+                key={sc.id}
+                className="panel p-4 flex flex-col justify-between hover:border-slate-700 transition-colors space-y-3"
               >
-                <input 
-                  type="radio" 
-                  name="scenario" 
-                  value={s.id}
-                  checked={selectedScenario === s.id}
-                  onChange={(e) => setSelectedScenario(e.target.value)}
-                  className="mt-1"
-                />
-                <div>
-                  <div className={`text-xs font-bold ${selectedScenario === s.id ? 'text-cyan-400' : 'text-slate-300'}`}>
-                    {s.label}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-white text-xs flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5 text-slate-400" />
+                      {sc.label}
+                    </span>
+                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase border ${threatStyles}`}>
+                      {sc.threat}
+                    </span>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{s.desc}</div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {sc.desc}
+                  </p>
                 </div>
-              </label>
-            ))}
-          </div>
 
-          <button
-            onClick={handleTriggerScenario}
-            disabled={loading}
-            className="w-full py-3 mt-4 text-sm font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
-          >
-            <Zap className="w-4 h-4" /> Inject Selected Vector
-          </button>
+                <div className="pt-2 border-t border-slate-800/60 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleTriggerScenario(sc.id)}
+                    disabled={loading}
+                    className="px-3 py-1 rounded bg-slate-900 hover:bg-slate-800 text-xs font-mono text-cyan-400 border border-slate-800 flex items-center gap-1 transition-colors disabled:opacity-50"
+                  >
+                    <span>Inject Payload</span> <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
