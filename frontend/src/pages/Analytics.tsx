@@ -12,8 +12,10 @@ import { formatTimestamp } from '../utils';
 import { PageHeader } from '../components/ui/PageHeader';
 import { KpiCard } from '../components/ui/KpiCard';
 import { SkeletonChart } from '../components/ui/SkeletonLoader';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Analytics() {
+  const { chartColors } = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -169,27 +171,29 @@ export default function Analytics() {
                     <XAxis
                       dataKey="timestamp"
                       tickFormatter={(t) => formatTimestamp(t)}
-                      stroke="#334155"
-                      tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                      axisLine={{ stroke: '#1e293b' }}
+                      stroke={chartColors.grid}
+                      tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                      axisLine={{ stroke: chartColors.grid }}
                       tickLine={false}
                     />
                     <YAxis
                       domain={[0, 100]}
-                      stroke="#334155"
-                      tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                      axisLine={{ stroke: '#1e293b' }}
+                      stroke={chartColors.grid}
+                      tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                      axisLine={{ stroke: chartColors.grid }}
                       tickLine={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#090e18',
-                        border: '1px solid #1e293b',
+                        backgroundColor: chartColors.tooltipBg,
+                        border: `1px solid ${chartColors.tooltipBorder}`,
+                        color: chartColors.tooltipText,
                         borderRadius: 6,
                         fontSize: 11,
                         fontFamily: 'monospace',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                       }}
-                      labelStyle={{ color: '#94a3b8' }}
+                      labelStyle={{ color: chartColors.text }}
                       formatter={(val: any) => [`${Number(val).toFixed(1)} / 100`, 'Risk Index']}
                     />
                     <Area
@@ -225,24 +229,26 @@ export default function Analytics() {
                     <BarChart data={dailyVolume}>
                       <XAxis
                         dataKey="date"
-                        stroke="#334155"
-                        tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                        axisLine={{ stroke: '#1e293b' }}
+                        stroke={chartColors.grid}
+                        tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                        axisLine={{ stroke: chartColors.grid }}
                         tickLine={false}
                       />
                       <YAxis
-                        stroke="#334155"
-                        tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                        axisLine={{ stroke: '#1e293b' }}
+                        stroke={chartColors.grid}
+                        tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                        axisLine={{ stroke: chartColors.grid }}
                         tickLine={false}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#090e18',
-                          border: '1px solid #1e293b',
+                          backgroundColor: chartColors.tooltipBg,
+                          border: `1px solid ${chartColors.tooltipBorder}`,
+                          color: chartColors.tooltipText,
                           borderRadius: 6,
                           fontSize: 11,
                           fontFamily: 'monospace',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                         }}
                       />
                       <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px', fontFamily: 'monospace' }} />
@@ -275,24 +281,26 @@ export default function Analytics() {
                   <LineChart data={decisionTrends}>
                     <XAxis
                       dataKey="date"
-                      stroke="#334155"
-                      tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                      axisLine={{ stroke: '#1e293b' }}
+                      stroke={chartColors.grid}
+                      tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                      axisLine={{ stroke: chartColors.grid }}
                       tickLine={false}
                     />
                     <YAxis
-                      stroke="#334155"
-                      tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                      axisLine={{ stroke: '#1e293b' }}
+                      stroke={chartColors.grid}
+                      tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                      axisLine={{ stroke: chartColors.grid }}
                       tickLine={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#090e18',
-                        border: '1px solid #1e293b',
+                        backgroundColor: chartColors.tooltipBg,
+                        border: `1px solid ${chartColors.tooltipBorder}`,
+                        color: chartColors.tooltipText,
                         borderRadius: 6,
                         fontSize: 11,
                         fontFamily: 'monospace',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                       }}
                     />
                     <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px', fontFamily: 'monospace' }} />

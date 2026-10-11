@@ -10,8 +10,10 @@ import { formatTimestamp } from '../utils';
 import { PageHeader } from '../components/ui/PageHeader';
 import { KpiCard } from '../components/ui/KpiCard';
 import { SkeletonTable } from '../components/ui/SkeletonLoader';
+import { useTheme } from '../hooks/useTheme';
 
 export default function NetworkPage() {
+  const { chartColors } = useTheme();
   const [stats, setStats] = useState<NetworkStats | null>(null);
   const [events, setEvents] = useState<NetworkEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,25 +149,28 @@ export default function NetworkPage() {
                 <BarChart data={packetData}>
                   <XAxis
                     dataKey="name"
-                    stroke="#334155"
-                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                    axisLine={{ stroke: '#1e293b' }}
+                    stroke={chartColors.grid}
+                    tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                    axisLine={{ stroke: chartColors.grid }}
                     tickLine={false}
                   />
                   <YAxis
-                    stroke="#334155"
-                    tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                    axisLine={{ stroke: '#1e293b' }}
+                    stroke={chartColors.grid}
+                    tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                    axisLine={{ stroke: chartColors.grid }}
                     tickLine={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#090e18',
-                      border: '1px solid #1e293b',
+                      backgroundColor: chartColors.tooltipBg,
+                      border: `1px solid ${chartColors.tooltipBorder}`,
+                      color: chartColors.tooltipText,
                       borderRadius: 6,
                       fontSize: 11,
                       fontFamily: 'monospace',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     }}
+                    labelStyle={{ color: chartColors.text }}
                     formatter={(val: any, name: any) => [Number(val), name === 'rate' ? 'Rate (req/s)' : 'Auth Failures']}
                   />
                   <Bar dataKey="rate" name="rate" fill="#0284c7" radius={[2, 2, 0, 0]} />

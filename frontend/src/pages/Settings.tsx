@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import {
   Sliders, History, Cpu, Save, RefreshCw, Trash2,
-  CheckCircle, AlertTriangle
+  CheckCircle, AlertTriangle, Palette, Sun
 } from 'lucide-react';
 import { adminApi } from '../services/api';
 import type { AuditLogItem } from '../types';
 import { formatTimestamp } from '../utils';
 import { PageHeader } from '../components/ui/PageHeader';
 import { SkeletonTable } from '../components/ui/SkeletonLoader';
+import { ThemeSelector } from '../components/ui/ThemeSelector';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState<'thresholds' | 'simulation' | 'audit' | 'models'>('thresholds');
+  const { theme } = useTheme();
+  const [activeTab, setActiveTab] = useState<'thresholds' | 'appearance' | 'simulation' | 'audit' | 'models'>('thresholds');
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -143,6 +146,7 @@ export default function Settings() {
       {/* Settings Tab Bar */}
       <div className="flex border-b border-slate-800/80 gap-6 overflow-x-auto text-xs font-mono">
         {[
+          { id: 'appearance', label: 'Appearance & Themes', icon: Palette },
           { id: 'thresholds', label: 'Decision Boundaries & Signal Weights', icon: Sliders },
           { id: 'simulation', label: 'Data Retention & Pruning', icon: Trash2 },
           { id: 'audit', label: 'System Audit Trail', icon: History },
@@ -174,6 +178,52 @@ export default function Settings() {
         }`}>
           {saveSuccess ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-amber-400" />}
           <span>{statusMessage}</span>
+        </div>
+      )}
+
+      {/* Tab: Appearance & Themes */}
+      {activeTab === 'appearance' && (
+        <div className="space-y-6">
+          <div className="panel p-5 space-y-5">
+            <div className="border-b border-slate-800/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Application Color Scheme & Appearance</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Select your preferred operational theme. Preferences are immediately applied and persisted across sessions in localStorage.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-sky-400 font-semibold self-start sm:self-auto">
+                Current: {theme.toUpperCase()} MODE
+              </span>
+            </div>
+
+            <div className="py-1">
+              <ThemeSelector variant="cards" />
+            </div>
+
+            <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-4 space-y-3">
+              <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                <Sun className="w-3.5 h-3.5 text-sky-400" /> Enterprise Theme System Architecture
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-400">
+                <div className="p-3 rounded bg-slate-950/60 border border-slate-800/80 space-y-1">
+                  <span className="font-semibold text-slate-200 block text-[11px] font-mono">Dark SOC Mode</span>
+                  <p className="text-[11px] leading-relaxed">
+                    Deep navy background (#070b12), high-density slate cards (#0c121e), cyan accent (#0284c7), and restrained telemetry glow tailored for 24/7 security operations centers.
+                  </p>
+                </div>
+                <div className="p-3 rounded bg-slate-950/60 border border-slate-800/80 space-y-1">
+                  <span className="font-semibold text-slate-200 block text-[11px] font-mono">Enterprise Light Mode</span>
+                  <p className="text-[11px] leading-relaxed">
+                    Soft off-white canvas (#f8fafc), clean white content cards (#ffffff), high-contrast slate text (#0f172a), and WCAG AA contrast for daylit environments.
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                * When "System" is selected, the platform automatically listens for operating system preference changes via matchMedia and switches dynamically without requiring a page refresh.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

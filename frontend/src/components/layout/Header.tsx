@@ -13,6 +13,7 @@ import type { SearchResult, Alert } from '../../types';
 import { formatCurrency, formatTimestamp } from '../../utils';
 import { RiskBadge } from '../ui/RiskBadge';
 import { SeverityBadge } from '../ui/SeverityBadge';
+import { ThemeSelector } from '../ui/ThemeSelector';
 
 interface HeaderProps {
   mobileMenuOpen: boolean;
@@ -281,6 +282,9 @@ export default function Header({
       {/* Right Actions */}
       <div className="flex items-center gap-2">
         {getWsBadge(wsStatus)}
+
+        {/* Appearance Theme Selector */}
+        <ThemeSelector variant="compact" />
 
         {/* Quick Batch Simulator Button */}
         <button

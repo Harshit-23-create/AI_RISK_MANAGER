@@ -1,34 +1,169 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #070b12;
-  --color-surface: #0c121e;
-  --color-surface-hover: #121a2b;
-  --color-surface-raised: #151f33;
-  --color-surface-subtle: #090e18;
-  --color-border-subtle: #162032;
-  --color-border-default: #1e2c44;
-  --color-border-strong: #2c3f60;
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-subtle: var(--color-surface-subtle);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-default: var(--color-border-default);
+  --color-border-strong: var(--color-border-strong);
   
-  --color-primary: #0284c7;
-  --color-primary-hover: #0369a1;
-  --color-primary-light: #38bdf8;
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-subtle: var(--color-text-subtle);
   
-  --color-risk-allow: #10b981;
-  --color-risk-monitor: #f59e0b;
-  --color-risk-stepup: #f97316;
-  --color-risk-block: #ef4444;
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+  
+  --color-risk-allow: var(--color-risk-allow);
+  --color-risk-monitor: var(--color-risk-monitor);
+  --color-risk-stepup: var(--color-risk-stepup);
+  --color-risk-block: var(--color-risk-block);
 
   --font-family-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-family-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-:root {
+/* ==========================================================================
+   THEME DESIGN TOKENS (DARK MODE AS DEFAULT)
+   ========================================================================== */
+
+:root,
+html[data-theme="dark"],
+html.dark {
   color-scheme: dark;
-  font-family: var(--font-family-sans);
-  background-color: #070b12;
-  color: #f1f5f9;
+  --font-family-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Surfaces & Canvas */
+  --color-canvas: #070b12;
+  --color-surface: #0c121e;
+  --color-surface-hover: #121a2b;
+  --color-surface-raised: #151f33;
+  --color-surface-subtle: #090e18;
+  --color-sidebar-bg: #070b12;
+  --color-header-bg: rgba(7, 11, 18, 0.88);
+
+  /* Borders */
+  --color-border-subtle: #162032;
+  --color-border-default: #1e2c44;
+  --color-border-strong: #2c3f60;
+
+  /* Typography */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #64748b;
+  --color-text-inverse: #070b12;
+
+  /* Primary Accent (Sky / Cyan) */
+  --color-primary: #0284c7;
+  --color-primary-hover: #0369a1;
+  --color-primary-light: #38bdf8;
+  --color-primary-muted: rgba(2, 132, 199, 0.15);
+
+  /* Semantic Security Colors */
+  --color-risk-allow: #10b981;
+  --color-risk-monitor: #f59e0b;
+  --color-risk-stepup: #f97316;
+  --color-risk-block: #ef4444;
+
+  /* Interactive Elements */
+  --panel-bg: #0c121e;
+  --panel-subtle-bg: #090e18;
+  --panel-border: #162032;
+  --panel-shadow: none;
+  --panel-hover-bg: #101828;
+  --panel-hover-border: #243550;
+
+  --input-bg: #060a12;
+  --input-border: #1e2c44;
+  --input-text: #f8fafc;
+  --input-placeholder: #64748b;
+
+  --chart-grid: #162032;
+  --chart-text: #94a3b8;
+  --chart-tooltip-bg: #0c121e;
+  --chart-tooltip-border: #1e2c44;
+  --chart-tooltip-text: #f8fafc;
+
+  --scrollbar-track: #080d16;
+  --scrollbar-thumb: #1b273d;
+  --scrollbar-hover: #2a3d5e;
 }
+
+/* ==========================================================================
+   THEME DESIGN TOKENS (LIGHT MODE)
+   ========================================================================== */
+
+html[data-theme="light"],
+html.light {
+  color-scheme: light;
+
+  /* Surfaces & Canvas */
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-surface-raised: #ffffff;
+  --color-surface-subtle: #f8fafc;
+  --color-sidebar-bg: #f8fafc;
+  --color-header-bg: rgba(255, 255, 255, 0.88);
+
+  /* Borders */
+  --color-border-subtle: #e2e8f0;
+  --color-border-default: #cbd5e1;
+  --color-border-strong: #94a3b8;
+
+  /* Typography (WCAG AA High-Contrast) */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --color-text-subtle: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* Primary Accent */
+  --color-primary: #0284c7;
+  --color-primary-hover: #0369a1;
+  --color-primary-light: #0284c7;
+  --color-primary-muted: rgba(2, 132, 199, 0.1);
+
+  /* Semantic Security Colors (Contrast Tuned) */
+  --color-risk-allow: #059669;
+  --color-risk-monitor: #d97706;
+  --color-risk-stepup: #ea580c;
+  --color-risk-block: #dc2626;
+
+  /* Interactive Elements */
+  --panel-bg: #ffffff;
+  --panel-subtle-bg: #f8fafc;
+  --panel-border: #e2e8f0;
+  --panel-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --panel-hover-bg: #f8fafc;
+  --panel-hover-border: #cbd5e1;
+
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+
+  --chart-grid: #e2e8f0;
+  --chart-text: #64748b;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: #cbd5e1;
+  --chart-tooltip-text: #0f172a;
+
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-hover: #94a3b8;
+}
+
+/* ==========================================================================
+   GLOBAL BASE STYLING
+   ========================================================================== */
 
 html,
 body,
@@ -37,67 +172,76 @@ body,
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #070b12;
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
 }
 
 body {
   min-height: 100dvh;
   overflow-x: hidden;
-  background-color: #070b12;
-  background-image: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.04), transparent),
-    radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.03), transparent 30rem);
-  color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Subtle modern scrollbar */
+/* Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #080d16;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1b273d;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a3d5e;
+  background: var(--scrollbar-hover);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1b273d #080d16;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 ::selection {
   background: rgba(14, 165, 233, 0.25);
-  color: #ffffff;
+  color: inherit;
 }
 
-/* Enterprise Panel Utilities */
+/* Focus outline accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   ENTERPRISE PANEL UTILITIES
+   ========================================================================== */
+
 .panel {
-  background-color: #0c121e;
-  border: 1px solid #162032;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 0.75rem;
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .panel-subtle {
-  background-color: #090e18;
-  border: 1px solid #162032;
+  background-color: var(--panel-subtle-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 0.75rem;
 }
 
 .panel-hover {
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 .panel-hover:hover {
-  border-color: #243550;
-  background-color: #101828;
+  border-color: var(--panel-hover-border);
+  background-color: var(--panel-hover-bg);
 }
 
 /* Strict Tabular Numbers for Data Density */
@@ -119,8 +263,170 @@ body {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-.skeleton-shimmer {
+
+html[data-theme="dark"] .skeleton-shimmer,
+html.dark .skeleton-shimmer,
+:root:not([data-theme="light"]) .skeleton-shimmer {
   background: linear-gradient(90deg, #101726 25%, #182338 37%, #101726 63%);
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
+}
+
+html[data-theme="light"] .skeleton-shimmer,
+html.light .skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   LIGHT MODE COMPONENT ADAPTATIONS
+   Systematically ensures high contrast and clarity in light theme
+   ========================================================================== */
+
+html[data-theme="light"],
+html.light {
+  /* Surfaces & Backgrounds */
+  .bg-canvas {
+    background-color: var(--color-canvas) !important;
+  }
+  .bg-slate-950,
+  .bg-slate-950\/95,
+  .bg-slate-950\/90,
+  .bg-slate-950\/80,
+  .bg-slate-950\/70 {
+    background-color: #ffffff !important;
+  }
+  .bg-slate-950\/60,
+  .bg-slate-950\/40,
+  .bg-slate-950\/30 {
+    background-color: #f8fafc !important;
+  }
+
+  .bg-slate-900,
+  .bg-slate-900\/95,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70 {
+    background-color: #ffffff !important;
+  }
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40,
+  .bg-slate-900\/30,
+  .bg-slate-850 {
+    background-color: #f1f5f9 !important;
+  }
+
+  .bg-slate-800,
+  .bg-slate-800\/80,
+  .bg-slate-800\/60 {
+    background-color: #f1f5f9 !important;
+  }
+
+  /* Borders */
+  .border-slate-800,
+  .border-slate-800\/80,
+  .border-slate-800\/60,
+  .border-slate-850 {
+    border-color: #e2e8f0 !important;
+  }
+  .border-slate-700,
+  .border-slate-700\/80,
+  .border-slate-700\/60 {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Text Colors & Contrast */
+  .text-white:not(.badge-text):not(.btn-text):not(.text-preserve-white) {
+    color: #0f172a !important;
+  }
+  .text-slate-100,
+  .text-slate-200 {
+    color: #0f172a !important;
+  }
+  .text-slate-300 {
+    color: #334155 !important;
+  }
+  .text-slate-400 {
+    color: #64748b !important;
+  }
+  .text-slate-500 {
+    color: #64748b !important;
+  }
+
+  /* Inputs, selects, and textareas */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  /* Tables */
+  thead tr {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+  tbody tr {
+    border-color: #f1f5f9 !important;
+  }
+  tbody tr:hover {
+    background-color: #f8fafc !important;
+  }
+
+  /* Dialogs and Modals */
+  .modal-surface,
+  [role="dialog"] {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+  }
+
+  /* Header & Navigation */
+  header {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom-color: #e2e8f0 !important;
+    backdrop-filter: blur(8px);
+  }
+  aside {
+    background-color: #f8fafc !important;
+    border-right-color: #e2e8f0 !important;
+  }
+
+  /* Pill Buttons & Inactive Tabs */
+  .nav-item-inactive {
+    color: #475569 !important;
+  }
+  .nav-item-inactive:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  /* Status Badges in Light Mode */
+  .badge-allow {
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border-color: #a7f3d0 !important;
+  }
+  .badge-monitor {
+    background-color: #fffbeb !important;
+    color: #92400e !important;
+    border-color: #fde68a !important;
+  }
+  .badge-stepup {
+    background-color: #fff7ed !important;
+    color: #9a3412 !important;
+    border-color: #fed7aa !important;
+  }
+  .badge-block {
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #fecaca !important;
+  }
 }

@@ -15,17 +15,17 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
 }) => {
   const d = (decision || 'ALLOW').toUpperCase();
 
-  let styles = 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50';
+  let styles = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 badge-text';
   let Icon = ShieldCheck;
 
   if (d === 'MONITOR') {
-    styles = 'bg-amber-950/40 text-amber-400 border-amber-800/50';
+    styles = 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50 badge-text';
     Icon = Eye;
   } else if (d === 'STEP-UP' || d === 'STEP_UP') {
-    styles = 'bg-orange-950/40 text-orange-400 border-orange-800/50';
+    styles = 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800/50 badge-text';
     Icon = ShieldAlert;
   } else if (d === 'BLOCK') {
-    styles = 'bg-rose-950/40 text-rose-400 border-rose-800/50';
+    styles = 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50 badge-text';
     Icon = Ban;
   }
 

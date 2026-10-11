@@ -19,6 +19,7 @@ import { SeverityBadge } from '../components/ui/SeverityBadge';
 import { RiskFactorBreakdown } from '../components/ui/RiskFactorBreakdown';
 import type { ToastMessage } from '../components/ui/Toast';
 import { ToastContainer } from '../components/ui/Toast';
+import { useTheme } from '../hooks/useTheme';
 
 const DECISION_COLORS: Record<string, string> = {
   ALLOW: '#10b981',
@@ -31,6 +32,7 @@ const MAX_FEED_ROWS = 50;
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { chartColors } = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [feed, setFeed] = useState<RiskFeedEvent[]>([]);
   const [recentAlerts, setRecentAlerts] = useState<AlertListResponse | null>(null);
@@ -265,27 +267,29 @@ export default function Dashboard() {
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(t) => formatTimestamp(t)}
-                  stroke="#334155"
-                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                  axisLine={{ stroke: '#1e293b' }}
+                  stroke={chartColors.grid}
+                  tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                  axisLine={{ stroke: chartColors.grid }}
                   tickLine={false}
                 />
                 <YAxis
                   domain={[0, 100]}
-                  stroke="#334155"
-                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }}
-                  axisLine={{ stroke: '#1e293b' }}
+                  stroke={chartColors.grid}
+                  tick={{ fill: chartColors.text, fontSize: 10, fontFamily: 'monospace' }}
+                  axisLine={{ stroke: chartColors.grid }}
                   tickLine={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#090e18',
-                    border: '1px solid #1e293b',
+                    backgroundColor: chartColors.tooltipBg,
+                    border: `1px solid ${chartColors.tooltipBorder}`,
+                    color: chartColors.tooltipText,
                     borderRadius: 6,
                     fontSize: 11,
                     fontFamily: 'monospace',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   }}
-                  labelStyle={{ color: '#94a3b8' }}
+                  labelStyle={{ color: chartColors.text }}
                   formatter={(val: any) => [`${Number(val).toFixed(1)} / 100`, 'Risk Index']}
                 />
                 <Area
@@ -321,20 +325,22 @@ export default function Dashboard() {
                   paddingAngle={2}
                 >
                   {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={DECISION_COLORS[entry.name] ?? '#64748b'} stroke="#0c121e" strokeWidth={2} />
+                    <Cell key={entry.name} fill={DECISION_COLORS[entry.name] ?? '#64748b'} stroke={chartColors.cardBg} strokeWidth={2} />
                   ))}
                 </Pie>
                 <Legend
                   iconSize={8}
-                  formatter={(v) => <span className="text-[11px] font-mono text-slate-300">{v}</span>}
+                  formatter={(v) => <span className="text-[11px] font-mono text-slate-400">{v}</span>}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#090e18',
-                    border: '1px solid #1e293b',
+                    backgroundColor: chartColors.tooltipBg,
+                    border: `1px solid ${chartColors.tooltipBorder}`,
+                    color: chartColors.tooltipText,
                     borderRadius: 6,
                     fontSize: 11,
                     fontFamily: 'monospace',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   }}
                 />
               </PieChart>
